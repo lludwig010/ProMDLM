@@ -14,6 +14,16 @@ def tokenize_df(sequence):
 
 df_train = pd.read_csv('Users/lludw/Documents/GrayLab_Class/finalProj/ProMDLM/ESM_traindata.csv')
 
+# Add X padding
+max_length = df_train['Protein Sequences'].str.len().max()
+
+for index, row in df_train.iterrows():
+    #sequence 
+    seq = row['Protein Sequences']
+
+    pad_to_add = (max_length - len(seq)) * 'Z'
+
+    df_train.loc[index, 'Protein Seqeunces'] = seq + pad_to_add
 
 n = len(df_train)
 print("num data points")
@@ -22,7 +32,8 @@ train_data = df_train[:int(n*0.9)]
 val_data = df_train[int(n*0.9):]
 
 
-#sequence = "MKTLLLTLVVXVTIVCLDLGYT"
+# Z is padding, X is masked
+#sequence = "MKTLLLTLVVVTIVCLDLGYTXZ"
 tokenizer = AminoAcidTokenizer()
 
 # tokenize train and val sequences 
