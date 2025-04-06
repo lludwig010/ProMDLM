@@ -1,0 +1,25 @@
+project: "DPLM_150m"
+name: "dplm_150m"
+
+datamodule:
+  max_tokens: 6000
+  max_len: 1022
+  mini_run: false
+
+model:
+  _target_: dplm
+  num_diffusion_timesteps: 500
+  gradient_ckpt: false
+  rdm_couple: false
+  lora:
+    lora: false
+    lora_rank: 16
+    lora_dropout: 0.1
+    lora_target_module: (esm.encoder.layer.[0-9]*.attention.(self.query|self.key|self.value|output.dense).*|esm.encoder.layer.[0-9]*.(intermediate|output).dense.*)
+    modules_to_save: lm_head,esm.embeddings
+  net:
+    arch_type: esm
+    name: facebook/esm2_t30_150M_UR50D
+    dropout: 0.1
+    pretrain: False
+    pretrained_model_name_or_path: ""
