@@ -2,50 +2,63 @@ import os
 import re
 import numpy as np
 import pandas as pd
-from tokenizers import Tokenizer, models, pre_tokenizers, trainers, processors
-from tokenizer import AminoAcidTokenizer
+import torch
+from transformers import AutoTokenizer
 import pickle
 
+# Load the ESM2 tokenizer
+tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t30_150M_UR50D")
 
-def tokenize_df(sequence):
-    tokens = tokenizer.tokenize(sequence)
-    return tokens
-    
+# Read the dataset
+df_train = pd.read_csv('ESM_traindata.csv')
 
-df_train = pd.read_csv('Users/lludw/Documents/GrayLab_Class/finalProj/ProMDLM/ESM_traindata.csv')
-
-# Add X padding
+# Find the maximum sequence length to use for padding
 max_length = df_train['Protein Sequences'].str.len().max()
+print("max length:")
+print(max_length)
 
-for index, row in df_train.iterrows():
-    #sequence 
-    seq = row['Protein Sequences']
+print(f"Maximum sequence length: {max_length}")
 
-    pad_to_add = (max_length - len(seq)) * 'Z'
+# Function to tokenize sequences with proper ESM2 format
+def tokenize_sequence(sequence, max_len=None):
+    # Format "cls " + "L "* generation_length + "eos"
+    # For ESM2, we don't need to manually add these tokens as the tokenizer will handle it
 
-    df_train.loc[index, 'Protein Seqeunces'] = seq + pad_to_add
+    # Tokenize and convert to input IDs
+    inputs = tokenizer(sequence, return_tensors="pt", padding="max_length", max_length=max_len)
+    return inputs["input_ids"].squeeze().tolist()  # Convert tensor to list for storage
 
+# Split data into train and validation sets
 n = len(df_train)
-print("num data points")
-print(n)
+print(f"Total number of data points: {n}")
+
 train_data = df_train[:int(n*0.9)]
 val_data = df_train[int(n*0.9):]
 
+print(f"Training set size: {len(train_data)}")
+print(f"Validation set size: {len(val_data)}")
 
-# Z is padding, X is masked
-#sequence = "MKTLLLTLVVVTIVCLDLGYTXZ"
-tokenizer = AminoAcidTokenizer()
+# Tokenize all sequences
+tokenized_train = []
+for seq in train_data['Protein Sequences']:
+    tokenized_train.append(tokenize_sequence(seq, max_length))
 
-# tokenize train and val sequences 
-tokenized_train = pd.DataFrame({'Protein Sequence Tokenized': train_data['Protein Sequences'].tokenize_df(train_data)})
-tokenized_val = pd.DataFrame({'Protein Sequence Tokenized': val_data['Protein Sequences'].tokenize_df(val_data)})
+tokenized_val = []
+for seq in val_data['Protein Sequences']:
+    tokenized_val.append(tokenize_sequence(seq, max_length))
 
-tokenized_train_array = tokenized_train['Protein Sequence Tokenized'].to_numpy()
-tokenized_val_array = tokenized_val['Protein Sequence Tokenized'].to_numpy()
+# Convert to numpy arrays
+tokenized_train_array = np.array(tokenized_train)
+tokenized_val_array = np.array(tokenized_val)
 
+print(f"Tokenized train array shape: {tokenized_train_array.shape}")
+print(f"Tokenized validation array shape: {tokenized_val_array.shape}")
+
+# Save tokenized data
 with open('tokenized_train_array.pkl', 'wb') as f:
     pickle.dump(tokenized_train_array, f)
 
 with open('tokenized_val_array.pkl', 'wb') as f:
     pickle.dump(tokenized_val_array, f)
 
+print("Tokenized arrays saved to disk.")

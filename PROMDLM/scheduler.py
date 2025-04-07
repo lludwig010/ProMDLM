@@ -22,7 +22,7 @@ def apply_noise(mask, input_seq, t):
     """Apply diffusion noise (masking) to a batch of input sequences."""
     
     masked_input_seq = input_seq.clone()
-    masked_input_seq[mask == 1] = 20  # Apply mask token (ID 20)
+    masked_input_seq[mask == 1] = 32  # Apply mask token (ID 32)
 
     return masked_input_seq, mask
 
