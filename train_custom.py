@@ -13,13 +13,14 @@ from models import DiffusionProteinLanguageModel
 from PROMDLM.lactamase.Dataset import CustomDataset
 
 class Trainer:
-    def __init__(self, model, optimizer, loss_function, epochs, train_loader, max_timesteps, batch_size, seq_len, vocab_size, device):
+    def __init__(self, model, optimizer, loss_function, epochs, train_loader, val_loader, max_timesteps, batch_size, seq_len, vocab_size, device):
 
         self.model = model
         self.optimizer = optimizer
         self.loss_function = loss_function
         self.epochs = epochs
         self.train_loader = train_loader
+        self.val_loader = val_loader
         self.max_timesteps = max_timesteps
         self. batch_size = batch_size
         self.seq_len = seq_len
@@ -29,18 +30,26 @@ class Trainer:
     def train_loop_fullDiff(self):
         
         train_losses = []
+        val_losses = [] 
+        train_losses_batch = []
+        print("num train data points:")
+        print(len(self.train_loader))
+
         for self.epoch in range(self.epochs):
             print(f"doing epoch: {self.epoch}")
 
             self.model.train()
             total_loss = 0.0
+            total_loss_val = 0.0
 
             num = 0
 
+
             #load in the batches of sequences
+            self.model.train()
             for batched_sequences_tokenized in self.train_loader:
-                print("batche seq")
-                print(batched_sequences_tokenized)
+                #print("batche seq")
+                #print(batched_sequences_tokenized)
 
                 batch_size = batched_sequences_tokenized.shape
 
@@ -48,8 +57,8 @@ class Trainer:
 
                 #remove start and end tokens so that length is 286
                 batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
-                print("batched seq shape:")
-                print(batched_sequences_tokenized.shape)
+                #print("batched seq shape:")
+                #print(batched_sequences_tokenized.shape)
                 self.optimizer.zero_grad()
 
                 # sample time step
@@ -66,15 +75,61 @@ class Trainer:
                 print(f"batch loss: {batch_loss}")
                 self.optimizer.step()
 
+                train_losses_batch.append(batch_loss)
+
                 total_loss += batch_loss.item()
 
                 num+= 1
+
+            self.model.eval()
+            print("Validation")
+            for batched_sequences_tokenized in self.val_loader:
+
+                batch_size = batched_sequences_tokenized.shape
+                size_to_mask = batch_size[0]
+
+                #remove start and end tokens so that length is 286
+                batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
+                #print("batched seq shape:")
+                #print(batched_sequences_tokenized.shape)
+
+                # sample time step
+                t = torch.randint(0, self.max_timesteps, (1,)).item()
+
+                #print(f"sampled timestep {t}")
+
+                batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
+                masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
+                batch_pred_tokens = self.model(masked_batch_seq)
+                val_batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
+
+                total_loss += val_batch_loss.item()
+                val_losses.append(batch_loss)
         
             avg_train_loss = total_loss / len(self.train_loader)
             print(f"epoch loss: {avg_train_loss}")
             train_losses.append(avg_train_loss)
 
-            
+            avg_val_loss = total_loss/len(self.val_loader)
+            print(f"epoch loss val: {avg_train_loss}")
+            val_losses.append(avg_val_loss)
+
+        all_Batches = len(train_losses_batch)
+        
+        plt.plot(all_Batches, train_losses_batch)
+        plt.xlabel("Batches")
+        plt.ylabel("Loss")
+        plt.title("Batch Loss")
+        plt.savefig('batch_loss_train')
+
+        '''
+        plt.plot(all_Batches, validation_losses_batch)
+        plt.xlabel("Batches")
+        plt.ylabel("Loss")
+        plt.title("Batch Loss")
+        plt.savefig('batch_loss_train')
+        '''
+ 
         return train_losses, self.model
 
 # will probably need to add config inputs here
@@ -82,11 +137,12 @@ def train_main():
 
     #Path to train and test pkl files
     train_file_pkl = '/mnt/c/Users/lludw/Documents/GrayLab_Class/finalProj/ProMDLM/PROMDLM/lactamase/tokenized_train_array.pkl'
+    val_file_pkl = '/mnt/c/Users/lludw/Documents/GrayLab_Class/finalProj/ProMDLM/PROMDLM/lactamase/tokenized_val_array.pkl'
 
     device = 'cuda'
     learning_rate = 0.0001
-    batch_size = 10
-    num_epochs = 10
+    batch_size = 26
+    num_epochs = 2
     max_timesteps = 100
     seq_len = 286
     vocab_size = 33
@@ -103,7 +159,10 @@ def train_main():
     train_dataset = CustomDataset(train_file_pkl)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-    trainer = Trainer(model, optimizer, loss, num_epochs, train_loader, max_timesteps, batch_size, seq_len, vocab_size, device)
+    val_dataset = CustomDataset(val_file_pkl)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+
+    trainer = Trainer(model, optimizer, loss, num_epochs, train_loader, val_loader, max_timesteps, batch_size, seq_len, vocab_size, device)
 
     train_losses, model = trainer.train_loop_fullDiff()
     
