@@ -5,7 +5,6 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 import matplotlib.pyplot as plt
 import numpy as np
-import torchvision.transforms as transforms
 from PROMDLM.scheduler import noise_schedule, scheduler_loss_fn, apply_noise
 from transformers import AutoTokenizer
 from omegaconf import OmegaConf
