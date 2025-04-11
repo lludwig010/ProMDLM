@@ -10,9 +10,10 @@ from transformers import AutoTokenizer
 from omegaconf import OmegaConf
 from models import DiffusionProteinLanguageModel
 from PROMDLM.lactamase.Dataset import CustomDataset
+import os
 
 class Trainer:
-    def __init__(self, model, optimizer, loss_function, epochs, train_loader, val_loader, max_timesteps, batch_size, seq_len, vocab_size, device):
+    def __init__(self, model, optimizer, loss_function, epochs, train_loader, val_loader, max_timesteps, batch_size, seq_len, vocab_size, device, output_dir):
 
         self.model = model
         self.optimizer = optimizer
@@ -25,12 +26,14 @@ class Trainer:
         self.seq_len = seq_len
         self.vocab_size = vocab_size
         self.device = device
+        self.output_dir = output_dir
 
     def train_loop_fullDiff(self):
         
         train_losses = []
         val_losses = [] 
         train_losses_batch = []
+        val_losses_batch=[]
         print("num train data points:")
         print(len(self.train_loader))
 
@@ -38,8 +41,8 @@ class Trainer:
             print(f"doing epoch: {self.epoch}")
 
             self.model.train()
-            total_loss = 0.0
-            total_loss_val = 0.0
+            train_total_loss = 0.0
+            val_total_loss = 0.0
 
             num = 0
 
@@ -49,8 +52,6 @@ class Trainer:
             
             for batched_sequences_tokenized in self.train_loader:
                 print(f"batch num {num}")
-                #print("batche seq")
-                #print(batched_sequences_tokenized)
 
                 batch_size = batched_sequences_tokenized.shape
 
@@ -58,8 +59,6 @@ class Trainer:
 
                 #remove start and end tokens so that length is 286
                 batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
-                #print("batched seq shape:")
-                #print(batched_sequences_tokenized.shape)
                 self.optimizer.zero_grad()
 
                 # sample time step
@@ -76,14 +75,15 @@ class Trainer:
                 print(f"batch loss: {batch_loss}")
                 self.optimizer.step()
 
-                train_losses_batch.append(batch_loss)
+                train_losses_batch.append(batch_loss.item())
 
-                total_loss += batch_loss.item()
+                train_total_loss += batch_loss.item()
 
                 num+= 1
 
             self.model.eval()
             print("Validation")
+            torch.cuda.empty_cache()
             for batched_sequences_tokenized in self.val_loader:
 
                 batch_size = batched_sequences_tokenized.shape
@@ -91,93 +91,61 @@ class Trainer:
 
                 #remove start and end tokens so that length is 286
                 batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
-                #print("batched seq shape:")
-                #print(batched_sequences_tokenized.shape)
 
                 # sample time step
                 t = torch.randint(0, self.max_timesteps, (1,)).item()
-
-                #print(f"sampled timestep {t}")
 
                 batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
                 masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
                 batch_pred_tokens = self.model(masked_batch_seq)
                 val_batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
 
-                total_loss += val_batch_loss.item()
-                val_losses.append(batch_loss)
+                val_total_loss += val_batch_loss.item() 
+                val_losses_batch.append(val_batch_loss.item()) 
         
-            avg_train_loss = total_loss / len(self.train_loader)
+            avg_train_loss = train_total_loss / len(self.train_loader) 
             print(f"epoch loss: {avg_train_loss}")
             train_losses.append(avg_train_loss)
 
-            avg_val_loss = total_loss/len(self.val_loader)
+            avg_val_loss = val_total_loss/len(self.val_loader) 
             print(f"epoch loss val: {avg_train_loss}")
             val_losses.append(avg_val_loss)
 
-        all_Batches = len(train_losses_batch)
-        
-        plt.plot(all_Batches, train_losses_batch)
-        plt.xlabel("Batches")
-        plt.ylabel("Loss")
-        plt.title("Batch Loss")
-        plt.savefig('batch_loss_train')
 
-        '''
-        plt.plot(all_Batches, validation_losses_batch)
+        
+        plt.plot(train_losses_batch)
         plt.xlabel("Batches")
         plt.ylabel("Loss")
-        plt.title("Batch Loss")
-        plt.savefig('batch_loss_train')
-        '''
+        plt.title("Train Batch Loss")
+        plt.savefig(self.output_dir + '/batch_loss_train.png')
+
+        
+        plt.plot(val_losses_batch)
+        plt.xlabel("Batches")
+        plt.ylabel("Loss")
+        plt.title("Val Batch Loss")
+        plt.savefig(self.output_dir + '/batch_loss_val.png')
+
+        plt.plot(train_losses)
+        plt.xlabel("epoch")
+        plt.ylabel("Loss")
+        plt.title("Train epoch Loss")
+        plt.savefig(self.output_dir + '/epoch_loss_train.png')
+
+        
+        plt.plot(val_losses)
+        plt.xlabel("epoch")
+        plt.ylabel("Loss")
+        plt.title("Val epoch Loss")
+        plt.savefig(self.output_dir + '/epoch_loss_val.png')
+
  
         return train_losses, self.model
 
-'''
-# will probably need to add config inputs here
-def train_main():
-
-    #Path to train and test pkl files
-    train_file_pkl = '/home/en540-lludwig2/ProMDLM/PROMDLM/lactamase/tokenized_train_array.pkl'
-    val_file_pkl = '/home/en540-lludwig2/ProMDLM/PROMDLM/lactamase/tokenized_val_array.pkl'
-
-    device = 'cuda'
-    learning_rate = 0.0001
-    batch_size = 32
-    num_epochs = 3
-    max_timesteps = 100
-    seq_len = 286
-    vocab_size = 33
-
-    # Alter for the kind of model we want
-    cfg = OmegaConf.load("configs/config_150m.yaml")
-    model = DiffusionProteinLanguageModel.from_pretrained("facebook/esm2_t30_150M_UR50D", cfg_override=cfg)
-    model = model.to(device)
- 
-    loss = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-5)
-
-    # Load Mushroom Dataset
-    train_dataset = CustomDataset(train_file_pkl)
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-
-    val_dataset = CustomDataset(val_file_pkl)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
-
-    trainer = Trainer(model, optimizer, loss, num_epochs, train_loader, val_loader, max_timesteps, batch_size, seq_len, vocab_size, device)
-
-    train_losses, model = trainer.train_loop_fullDiff()
-    
-
-    #TODO define plot function
-    #plot_results(train_losses)
-
-    return train_losses, model
-'''
-
 
 def train_main():
-    config = OmegaConf.load("configs/L_config.yaml")
+    config = OmegaConf.load("configs/g_config.yaml")
+    os.makedirs(config.paths.output_dir, exist_ok=True)
 
     train_file_pkl = config.paths.train_file
     val_file_pkl = config.paths.val_file
@@ -190,6 +158,7 @@ def train_main():
     seq_len = config.training.seq_len
     vocab_size = config.training.vocab_size
     weight_decay = config.training.weight_decay
+    output_dir = config.paths.output_dir
 
 
     cfg = OmegaConf.load(config.paths.pretrained_model_cfg)
@@ -208,7 +177,7 @@ def train_main():
 
     trainer = Trainer(
         model, optimizer, loss, num_epochs, train_loader, val_loader,
-        max_timesteps, batch_size, seq_len, vocab_size, device
+        max_timesteps, batch_size, seq_len, vocab_size, device, output_dir
     )
 
     train_losses, model = trainer.train_loop_fullDiff()

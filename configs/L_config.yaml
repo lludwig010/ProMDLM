@@ -5,6 +5,8 @@ paths:
   val_file: "/home/en540-lludwig2/ProMDLM/PROMDLM/lactamase/tokenized_val_array.pkl"
   pretrained_model_cfg: "configs/config_150m.yaml"
   pretrained_model_name: "facebook/esm2_t30_150M_UR50D"
+  output_dir: "/home/en540-lludwig2/ProMDLM/training_results/initial_test_laurent"
+
 
 training:
   device: "cuda"

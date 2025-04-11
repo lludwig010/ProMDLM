@@ -7,10 +7,13 @@ from torch.utils.data import DataLoader, Dataset
 import pickle
 
 class CustomDataset(Dataset):
-    def __init__(self, dataset_file):
+    def __init__(self, dataset_file, max_datapoints = None):
 
         with open(dataset_file, 'rb') as f:
             self.data = pickle.load(f)
+
+        if max_datapoints is not None:
+            self.data = self.data[:max_datapoints]
 
         self.length = len(self.data)
     
