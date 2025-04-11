@@ -103,7 +103,7 @@ class Trainer:
                 val_total_loss += val_batch_loss.item() 
                 val_losses_batch.append(val_batch_loss.item()) 
         
-            avg_train_loss = train_total_loss / len(self.train_loader) 
+            avg_train_loss = train_total_loss / len(self.train_loader)
             print(f"epoch loss: {avg_train_loss}")
             train_losses.append(avg_train_loss)
 
@@ -112,27 +112,28 @@ class Trainer:
             val_losses.append(avg_val_loss)
 
 
-        
+        plt.figure()
         plt.plot(train_losses_batch)
         plt.xlabel("Batches")
         plt.ylabel("Loss")
         plt.title("Train Batch Loss")
         plt.savefig(self.output_dir + '/batch_loss_train.png')
-
-        
+  
+        plt.figure()
         plt.plot(val_losses_batch)
         plt.xlabel("Batches")
         plt.ylabel("Loss")
         plt.title("Val Batch Loss")
         plt.savefig(self.output_dir + '/batch_loss_val.png')
 
+        plt.figure()
         plt.plot(train_losses)
         plt.xlabel("epoch")
         plt.ylabel("Loss")
         plt.title("Train epoch Loss")
         plt.savefig(self.output_dir + '/epoch_loss_train.png')
 
-        
+        plt.figure()
         plt.plot(val_losses)
         plt.xlabel("epoch")
         plt.ylabel("Loss")
@@ -169,7 +170,7 @@ def train_main():
     loss = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    train_dataset = CustomDataset(train_file_pkl)
+    train_dataset = CustomDataset(train_file_pkl, max_datapoints=100)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
     val_dataset = CustomDataset(val_file_pkl)
