@@ -47,7 +47,9 @@ class Trainer:
 
             #load in the batches of sequences
             self.model.train()
+            
             for batched_sequences_tokenized in self.train_loader:
+                print(f"batch num {num}")
                 #print("batche seq")
                 #print(batched_sequences_tokenized)
 
@@ -132,17 +134,18 @@ class Trainer:
  
         return train_losses, self.model
 
+'''
 # will probably need to add config inputs here
 def train_main():
 
     #Path to train and test pkl files
-    train_file_pkl = '/mnt/c/Users/lludw/Documents/GrayLab_Class/finalProj/ProMDLM/PROMDLM/lactamase/tokenized_train_array.pkl'
-    val_file_pkl = '/mnt/c/Users/lludw/Documents/GrayLab_Class/finalProj/ProMDLM/PROMDLM/lactamase/tokenized_val_array.pkl'
+    train_file_pkl = '/home/en540-lludwig2/ProMDLM/PROMDLM/lactamase/tokenized_train_array.pkl'
+    val_file_pkl = '/home/en540-lludwig2/ProMDLM/PROMDLM/lactamase/tokenized_val_array.pkl'
 
     device = 'cuda'
     learning_rate = 0.0001
-    batch_size = 26
-    num_epochs = 2
+    batch_size = 32
+    num_epochs = 3
     max_timesteps = 100
     seq_len = 286
     vocab_size = 33
@@ -171,7 +174,46 @@ def train_main():
     #plot_results(train_losses)
 
     return train_losses, model
+'''
 
+
+def train_main():
+    config = OmegaConf.load("configs/L_config.yaml")
+
+    train_file_pkl = config.paths.train_file
+    val_file_pkl = config.paths.val_file
+
+    device = config.training.device
+    learning_rate = config.training.learning_rate
+    batch_size = config.training.batch_size
+    num_epochs = config.training.epochs
+    max_timesteps = config.training.max_timesteps
+    seq_len = config.training.seq_len
+    vocab_size = config.training.vocab_size
+    weight_decay = config.training.weight_decay
+
+
+    cfg = OmegaConf.load(config.paths.pretrained_model_cfg)
+    model = DiffusionProteinLanguageModel.from_pretrained(
+        config.paths.pretrained_model_name, cfg_override=cfg
+    ).to(device)
+
+    loss = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+
+    train_dataset = CustomDataset(train_file_pkl)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+
+    val_dataset = CustomDataset(val_file_pkl)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+
+    trainer = Trainer(
+        model, optimizer, loss, num_epochs, train_loader, val_loader,
+        max_timesteps, batch_size, seq_len, vocab_size, device
+    )
+
+    train_losses, model = trainer.train_loop_fullDiff()
+    return train_losses, model
 
 
 

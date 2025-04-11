@@ -1,0 +1,17 @@
+# configs/train_config.yaml
+
+paths:
+  train_file: "/home/en540-lludwig2/ProMDLM/PROMDLM/lactamase/tokenized_train_array.pkl"
+  val_file: "/home/en540-lludwig2/ProMDLM/PROMDLM/lactamase/tokenized_val_array.pkl"
+  pretrained_model_cfg: "configs/config_150m.yaml"
+  pretrained_model_name: "facebook/esm2_t30_150M_UR50D"
+
+training:
+  device: "cuda"
+  learning_rate: 0.0001
+  batch_size: 32
+  epochs: 3
+  max_timesteps: 100
+  seq_len: 286
+  vocab_size: 33
+  weight_decay: 1e-5
