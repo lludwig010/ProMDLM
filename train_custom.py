@@ -182,6 +182,8 @@ def train_main():
     )
 
     train_losses, model = trainer.train_loop_fullDiff()
+    print("Training complete. Saving model.")
+    model.save_pretrained(output_dir)
     return train_losses, model
 
 
