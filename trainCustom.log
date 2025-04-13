@@ -1,1 +1,77 @@
-slurmstepd: error: *** JOB 124143 ON gpuz02 CANCELLED AT 2025-04-11T13:59:11 ***
+num train data points:
+243
+doing epoch: 0
+epoch loss train: 11.204144175283211
+epoch loss val: 11.204144175283211
+doing epoch: 1
+Traceback (most recent call last):
+  File "/home/en540-lludwig2/ProMDLM/train_custom.py", line 343, in <module>
+    train_main()
+    ~~~~~~~~~~^^
+  File "/home/en540-lludwig2/ProMDLM/train_custom.py", line 332, in train_main
+    train_losses, model = trainer.train_loop_fullDiff()
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/en540-lludwig2/ProMDLM/train_custom.py", line 103, in train_loop_fullDiff
+    batch_pred_tokens = self.model(masked_batch_seq)
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/en540-lludwig2/ProMDLM/models/dplm.py", line 145, in forward
+    outputs = self.net(
+        input_ids=input_ids,
+    )
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/en540-lludwig2/ProMDLM/models/esm_dplm.py", line 273, in forward
+    outputs = self.esm(
+        input_ids,
+    ...<2 lines>...
+        encoder_attention_mask=encoder_attention_mask,
+    )
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/en540-lludwig2/ProMDLM/models/esm_dplm.py", line 211, in forward
+    encoder_outputs = self.encoder(
+        embedding_output,
+    ...<8 lines>...
+        return_dict=return_dict,
+    )
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/transformers/models/esm/modeling_esm.py", line 612, in forward
+    layer_outputs = layer_module(
+        hidden_states,
+    ...<5 lines>...
+        output_attentions,
+    )
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/transformers/models/esm/modeling_esm.py", line 544, in forward
+    layer_output = self.feed_forward_chunk(attention_output)
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/transformers/models/esm/modeling_esm.py", line 555, in feed_forward_chunk
+    intermediate_output = self.intermediate(attention_output_ln)
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/transformers/models/esm/modeling_esm.py", line 457, in forward
+    hidden_states = gelu(hidden_states)
+  File "/home/en540-lludwig2/.conda/envs/CompClass/lib/python3.13/site-packages/transformers/models/esm/modeling_esm.py", line 60, in gelu
+    return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
+                      ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 46.00 MiB. GPU 0 has a total capacity of 19.50 GiB of which 2.94 MiB is free. Process 1648099 has 13.27 GiB memory in use. Including non-PyTorch memory, this process has 19.46 GiB memory in use. Of the allocated memory 18.24 GiB is allocated by PyTorch, and 1.07 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
