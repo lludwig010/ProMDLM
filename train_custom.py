@@ -13,7 +13,7 @@ from PROMDLM.lactamase.Dataset import CustomDataset
 import os
 
 class Trainer:
-    def __init__(self, model, optimizer, loss_function, epochs, train_loader, val_loader, max_timesteps, batch_size, seq_len, vocab_size, device, output_dir):
+    def __init__(self, model, optimizer, loss_function, epochs, train_loader, val_loader, max_timesteps, batch_size, seq_len, vocab_size, device, output_dir, job_name="TEST"):
 
         self.model = model
         self.optimizer = optimizer
@@ -27,8 +27,11 @@ class Trainer:
         self.vocab_size = vocab_size
         self.device = device
         self.output_dir = output_dir
+        self.job_name = job_name
+
 
     def train_loop_fullDiff(self):
+        # Training scheme where amount diffuse increases with time
         
         train_losses = []
         val_losses = [] 
@@ -51,7 +54,7 @@ class Trainer:
             self.model.train()
             
             for batched_sequences_tokenized in self.train_loader:
-                print(f"batch num {num}")
+                #print(f"batch num {num}")
 
                 batch_size = batched_sequences_tokenized.shape
 
@@ -64,7 +67,7 @@ class Trainer:
                 # sample time step
                 t = torch.randint(0, self.max_timesteps, (1,)).item()
 
-                print(f"sampled timestep {t}")
+                #print(f"sampled timestep {t}")
 
                 batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
                 masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
@@ -72,7 +75,7 @@ class Trainer:
                 batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
 
                 batch_loss.backward()
-                print(f"batch loss: {batch_loss}")
+                #print(f"batch loss: {batch_loss}")
                 self.optimizer.step()
 
                 train_losses_batch.append(batch_loss.item())
@@ -82,7 +85,7 @@ class Trainer:
                 num+= 1
 
             self.model.eval()
-            print("Validation")
+            #print("Validation")
             torch.cuda.empty_cache()
             for batched_sequences_tokenized in self.val_loader:
 
@@ -104,7 +107,7 @@ class Trainer:
                 val_losses_batch.append(val_batch_loss.item()) 
         
             avg_train_loss = train_total_loss / len(self.train_loader)
-            print(f"epoch loss: {avg_train_loss}")
+            print(f"epoch loss train: {avg_train_loss}")
             train_losses.append(avg_train_loss)
 
             avg_val_loss = val_total_loss/len(self.val_loader) 
@@ -140,12 +143,150 @@ class Trainer:
         plt.title("Val epoch Loss")
         plt.savefig(self.output_dir + '/epoch_loss_val.png')
 
+        #save the weights at the end of training
+        torch.save(self.model, output_dir + f'/{job_name}_weights.pth')
+
  
         return train_losses, self.model
 
+    def train_increment_diffusion(self):
+        # Training scheme where amount diffuse increases with time
+        
+        train_losses = []
+        val_losses = [] 
+        train_losses_batch = []
+        val_losses_batch=[]
+        print("num train data points:")
+        print(len(self.train_loader))
+
+        
+        for epoch in range(self.epochs):
+            print(f"doing epoch: {epoch}")
+
+            self.model.train()
+            train_total_loss = 0.0
+            val_total_loss = 0.0
+
+            num = 0
+            #load in the batches of sequences
+            self.model.train()
+            
+            for batched_sequences_tokenized in self.train_loader:
+                print(f"batch num {num}")
+
+                batch_size = batched_sequences_tokenized.shape
+
+                size_to_mask = batch_size[0]
+
+                #remove start and end tokens so that length is 286
+                batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
+                self.optimizer.zero_grad()
+
+                # sample time step based off of the epoch training is on 
+                # timestep is proportional to current epoch on
+                timestep = (epoch/self.epoch) * self.max_timesteps
+
+                # define range for possible timesteps to sample between. upper and lower bound are 10% away from current timestep
+                low_timestep = max(0, timestep - 0.1 * self.max_timesteps)
+                max_timestep = min(self.max_timestep, timestep + 0.1 * self.max_timesteps)
+
+                t = torch.randint(low_timestep, max_timestep, (1,)).item()
+
+                print(f"sampled timestep {t}")
+
+                batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
+                masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
+                batch_pred_tokens = self.model(masked_batch_seq)
+                batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
+
+                batch_loss.backward()
+                print(f"batch loss: {batch_loss}")
+                self.optimizer.step()
+
+                train_losses_batch.append(batch_loss.item())
+
+                train_total_loss += batch_loss.item()
+
+                num+= 1
+
+            self.model.eval()
+            print("Validation")
+            torch.cuda.empty_cache()
+            for batched_sequences_tokenized in self.val_loader:
+
+                batch_size = batched_sequences_tokenized.shape
+                size_to_mask = batch_size[0]
+
+                #remove start and end tokens so that length is 286
+                batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
+
+                # sample time step
+
+                timestep = (epoch/self.epoch) * self.max_timesteps
+
+                # define range for possible timesteps to sample between. upper and lower bound are 10% away from current timestep
+                low_timestep = max(0, timestep - 0.1 * self.max_timesteps)
+                max_timestep = min(self.max_timestep, timestep + 0.1 * self.max_timesteps)
+
+                t = torch.randint(low_timestep, max_timestep, (1,)).item()
+
+                batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
+                masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
+                batch_pred_tokens = self.model(masked_batch_seq)
+                val_batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
+
+                val_total_loss += val_batch_loss.item() 
+                val_losses_batch.append(val_batch_loss.item()) 
+        
+            avg_train_loss = train_total_loss / len(self.train_loader)
+            print(f"epoch loss: {avg_train_loss}")
+            train_losses.append(avg_train_loss)
+
+            avg_val_loss = val_total_loss/len(self.val_loader) 
+            print(f"epoch loss val: {avg_train_loss}")
+            val_losses.append(avg_val_loss)
+
+        plot(self.job_name, batch_train_losses, batch_val_losses, epoch_train_loses, epoch_val_losses, self.output_dir)
+
+        torch.save(self.model, output_dir + f'/{job_name}_weights.pth')
+
+
+
+def plot(job_name, batch_train_losses, batch_val_losses, epoch_train_loses, epoch_val_losses, output_dir):
+    # function to plot the epoch and batch loss graphs, saved under output_dir with the job name
+
+        plt.figure()
+        plt.plot(batch_train_losses)
+        plt.xlabel("Batches")
+        plt.ylabel("Loss")
+        plt.title("Train Batch Loss")
+        plt.savefig(output_dir + f'/{job_name}_batch_loss_train.png')
+  
+        plt.figure()
+        plt.plot(batch_val_losses)
+        plt.xlabel("Batches")
+        plt.ylabel("Loss")
+        plt.title("Val Batch Loss")
+        plt.savefig(output_dir + f'/{job_name}_batch_loss_val.png')
+
+        plt.figure()
+        plt.plot(epoch_train_loses)
+        plt.xlabel("epoch")
+        plt.ylabel("Loss")
+        plt.title("Train epoch Loss")
+        plt.savefig(output_dir + f'/{job_name}_epoch_loss_train.png')
+
+        plt.figure()
+        plt.plot(epoch_val_losses)
+        plt.xlabel("epoch")
+        plt.ylabel("Loss")
+        plt.title("Val epoch Loss")
+        plt.savefig(output_dir + f'/{job_name}_epoch_loss_val.png')
+
+
 
 def train_main():
-    config = OmegaConf.load("configs/g_config.yaml")
+    config = OmegaConf.load("configs/L_config.yaml")
     os.makedirs(config.paths.output_dir, exist_ok=True)
 
     train_file_pkl = config.paths.train_file
@@ -159,7 +300,12 @@ def train_main():
     seq_len = config.training.seq_len
     vocab_size = config.training.vocab_size
     weight_decay = config.training.weight_decay
+    # added scheme to choose what kind of training
+    training_scheme = config.training.scheme
+    # added job name for naming runs
+    job_name = config.paths.job_name
     output_dir = config.paths.output_dir
+
 
 
     cfg = OmegaConf.load(config.paths.pretrained_model_cfg)
@@ -170,7 +316,7 @@ def train_main():
     loss = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    train_dataset = CustomDataset(train_file_pkl, max_datapoints=100)
+    train_dataset = CustomDataset(train_file_pkl, max_datapoints=None)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
     val_dataset = CustomDataset(val_file_pkl)
@@ -178,10 +324,16 @@ def train_main():
 
     trainer = Trainer(
         model, optimizer, loss, num_epochs, train_loader, val_loader,
-        max_timesteps, batch_size, seq_len, vocab_size, device, output_dir
+        max_timesteps, batch_size, seq_len, vocab_size, device, output_dir, job_name
     )
 
-    train_losses, model = trainer.train_loop_fullDiff()
+    # default training scheme
+    if training_scheme == 1:
+        train_losses, model = trainer.train_loop_fullDiff()
+    # incremental diffusion
+    elif training_scheme == 2:
+        train_losses, model = trainer.train_increment_diffusion()
+
     return train_losses, model
 
 
