@@ -6,6 +6,7 @@ paths:
   pretrained_model_cfg: "configs/config_150m.yaml"
   pretrained_model_name: "facebook/esm2_t30_150M_UR50D"
   output_dir: "/home/jtso3/ghassan/ProMDLM/training_results/initial_test"
+  job_name: "g_run_scheme_1"
 
 training:
   device: "cuda:0"
@@ -16,3 +17,4 @@ training:
   seq_len: 286
   vocab_size: 33
   weight_decay: 1e-5
+  scheme: 1
