@@ -144,7 +144,7 @@ class Trainer:
         plt.savefig(self.output_dir + '/epoch_loss_val.png')
 
         #save the weights at the end of training
-        torch.save(self.model, output_dir + f'/{job_name}_weights.pth')
+        torch.save(self.model, self.output_dir + f'/{self.job_name}_weights.pth')
 
  
         return train_losses, self.model
@@ -246,9 +246,9 @@ class Trainer:
             print(f"epoch loss val: {avg_train_loss}")
             val_losses.append(avg_val_loss)
 
-        plot(self.job_name, batch_train_losses, batch_val_losses, epoch_train_loses, epoch_val_losses, self.output_dir)
+        plot(self.job_name, train_losses_batch, val_losses_batch, train_losses, val_losses, self.output_dir)
 
-        torch.save(self.model, output_dir + f'/{job_name}_weights.pth')
+        torch.save(self.model, self.output_dir + f'/{self.job_name}_weights.pth')
 
 
 
@@ -337,7 +337,7 @@ def train_main():
 
     print("Training complete. Saving model.")
     model.save_pretrained(output_dir)
-    
+
     return train_losses, model
 
 
