@@ -172,7 +172,8 @@ class Trainer:
             self.model.train()
             
             for batched_sequences_tokenized in self.train_loader:
-                print(f"batch num {num}")
+                if (num % 10 == 0):
+                    print(f"batch num {num}")
 
                 batch_size = batched_sequences_tokenized.shape
 
@@ -184,15 +185,22 @@ class Trainer:
 
                 # sample time step based off of the epoch training is on 
                 # timestep is proportional to current epoch on
-                timestep = (epoch/self.epoch) * self.max_timesteps
+                timestep = (epoch/self.epochs) * self.max_timesteps
 
                 # define range for possible timesteps to sample between. upper and lower bound are 10% away from current timestep
                 low_timestep = max(0, timestep - 0.1 * self.max_timesteps)
-                max_timestep = min(self.max_timestep, timestep + 0.1 * self.max_timesteps)
+                max_timestep = min(self.max_timesteps, timestep + 0.1 * self.max_timesteps)
 
-                t = torch.randint(low_timestep, max_timestep, (1,)).item()
+                '''
+                print(low_timestep)
+                print(type(low_timestep))
+                print(max_timestep)
+                print(type(max_timestep))
+                '''
 
-                print(f"sampled timestep {t}")
+                t = torch.randint(int(low_timestep), int(max_timestep), (1,)).item()
+
+                #print(f"sampled timestep {t}")
 
                 batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
                 masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
@@ -200,7 +208,7 @@ class Trainer:
                 batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
 
                 batch_loss.backward()
-                print(f"batch loss: {batch_loss}")
+                #print(f"batch loss: {batch_loss}")
                 self.optimizer.step()
 
                 train_losses_batch.append(batch_loss.item())
@@ -222,13 +230,13 @@ class Trainer:
 
                 # sample time step
 
-                timestep = (epoch/self.epoch) * self.max_timesteps
+                timestep = (epoch/self.epochs) * self.max_timesteps
 
                 # define range for possible timesteps to sample between. upper and lower bound are 10% away from current timestep
                 low_timestep = max(0, timestep - 0.1 * self.max_timesteps)
-                max_timestep = min(self.max_timestep, timestep + 0.1 * self.max_timesteps)
+                max_timestep = min(self.max_timesteps, timestep + 0.1 * self.max_timesteps)
 
-                t = torch.randint(low_timestep, max_timestep, (1,)).item()
+                t = torch.randint(int(low_timestep), int(max_timestep), (1,)).item()
 
                 batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
                 masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
