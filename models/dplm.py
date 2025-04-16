@@ -64,36 +64,37 @@ class DiffusionProteinLanguageModel(nn.Module):
             # The net_name should be like:
             # ${name}/checkpoints/last.ckpt
             # and there should be .hydra/config.yaml in the ${name} directory that is automatically generated during training.
-            from byprot.utils.config import load_yaml_config
-            from pathlib import Path
-            from collections import OrderedDict
-
-            cfg_path = Path(net_name).parents[1]
-            cfg_path = Path(cfg_path, ".hydra", "config.yaml")
-            cfg = load_yaml_config(str(cfg_path)).model
-            cfg.net.pretrain = False
-            cfg.pop("_target_")
-            model = cls(cfg)
-
-            pretrained_state_dict = torch.load(
-                net_name, map_location=torch.device("cpu")
-            )["state_dict"]
-            new_pretrained_state_dict = OrderedDict()
-
-            # remove the module prefix "model."
-            for k, v in pretrained_state_dict.items():
-                new_pretrained_state_dict[k[6:]] = v
-
-            missing, unexpected = model.load_state_dict(
-                new_pretrained_state_dict, strict=False
-            )
-            print(
-                f"Restored from {net_name} with {len(missing)} missing and {len(unexpected)} unexpected keys"
-            )
-            if len(missing) > 0:
-                print(f"Missing Keys: {missing}")
-                print(f"Unexpected Keys: {unexpected}")
-            return model
+            #from byprot.utils.config import load_yaml_config
+            #from pathlib import Path
+            #from collections import OrderedDict
+#
+            #cfg_path = Path(net_name).parents[1]
+            #cfg_path = Path(cfg_path, ".hydra", "config.yaml")
+            #cfg = load_yaml_config(str(cfg_path)).model
+            #cfg.net.pretrain = False
+            #cfg.pop("_target_")
+            #model = cls(cfg)
+#
+            #pretrained_state_dict = torch.load(
+            #    net_name, map_location=torch.device("cpu")
+            #)["state_dict"]
+            #new_pretrained_state_dict = OrderedDict()
+#
+            ## remove the module prefix "model."
+            #for k, v in pretrained_state_dict.items():
+            #    new_pretrained_state_dict[k[6:]] = v
+#
+            #missing, unexpected = model.load_state_dict(
+            #    new_pretrained_state_dict, strict=False
+            #)
+            #print(
+            #    f"Restored from {net_name} with {len(missing)} missing and {len(unexpected)} unexpected keys"
+            #)
+            #if len(missing) > 0:
+            #    print(f"Missing Keys: {missing}")
+            #    print(f"Unexpected Keys: {unexpected}")
+            pass
+            
         else:
             # Load DPLM model checkpoint from huggingface
             net_type = AutoConfig.from_pretrained(net_name).model_type
