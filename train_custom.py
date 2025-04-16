@@ -10,6 +10,8 @@ from transformers import AutoTokenizer
 from omegaconf import OmegaConf
 from models import DiffusionProteinLanguageModel
 from PROMDLM.lactamase.Dataset import CustomDataset
+import logging
+import torch
 import os
 
 class Trainer:
@@ -159,9 +161,20 @@ class Trainer:
         print("num train data points:")
         print(len(self.train_loader))
 
+        logging.basicConfig(
+            filename='training_increment.log',
+            filemode='w',  # 'a' for append, 'w' to overwrite each time
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            level=logging.INFO
+        )
+        logger = logging.getLogger()
+
+        logger.info("num train data points: %d", len(self.train_loader))
+
         
         for epoch in range(self.epochs):
             print(f"doing epoch: {epoch}")
+            logger.info(f"Starting epoch: {epoch}")
 
             self.model.train()
             train_total_loss = 0.0
@@ -172,7 +185,9 @@ class Trainer:
             self.model.train()
             
             for batched_sequences_tokenized in self.train_loader:
-                print(f"batch num {num}")
+                if (num % 10 == 0):
+                    print(f"batch num {num}")
+                    logger.info(f"Training batch num: {num}")
 
                 batch_size = batched_sequences_tokenized.shape
 
@@ -184,15 +199,22 @@ class Trainer:
 
                 # sample time step based off of the epoch training is on 
                 # timestep is proportional to current epoch on
-                timestep = (epoch/self.epoch) * self.max_timesteps
+                timestep = (epoch/self.epochs) * self.max_timesteps
 
                 # define range for possible timesteps to sample between. upper and lower bound are 10% away from current timestep
                 low_timestep = max(0, timestep - 0.1 * self.max_timesteps)
-                max_timestep = min(self.max_timestep, timestep + 0.1 * self.max_timesteps)
+                max_timestep = min(self.max_timesteps, timestep + 0.1 * self.max_timesteps)
 
-                t = torch.randint(low_timestep, max_timestep, (1,)).item()
+                '''
+                print(low_timestep)
+                print(type(low_timestep))
+                print(max_timestep)
+                print(type(max_timestep))
+                '''
 
-                print(f"sampled timestep {t}")
+                t = torch.randint(int(low_timestep), int(max_timestep), (1,)).item()
+
+                #print(f"sampled timestep {t}")
 
                 batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
                 masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
@@ -200,7 +222,7 @@ class Trainer:
                 batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
 
                 batch_loss.backward()
-                print(f"batch loss: {batch_loss}")
+                #print(f"batch loss: {batch_loss}")
                 self.optimizer.step()
 
                 train_losses_batch.append(batch_loss.item())
@@ -211,8 +233,11 @@ class Trainer:
 
             self.model.eval()
             print("Validation")
+            '''
             torch.cuda.empty_cache()
             for batched_sequences_tokenized in self.val_loader:
+                if (num % 10 == 0):
+                    print(f"batch num {num}")
 
                 batch_size = batched_sequences_tokenized.shape
                 size_to_mask = batch_size[0]
@@ -222,13 +247,13 @@ class Trainer:
 
                 # sample time step
 
-                timestep = (epoch/self.epoch) * self.max_timesteps
+                timestep = (epoch/self.epochs) * self.max_timesteps
 
                 # define range for possible timesteps to sample between. upper and lower bound are 10% away from current timestep
                 low_timestep = max(0, timestep - 0.1 * self.max_timesteps)
-                max_timestep = min(self.max_timestep, timestep + 0.1 * self.max_timesteps)
+                max_timestep = min(self.max_timesteps, timestep + 0.1 * self.max_timesteps)
 
-                t = torch.randint(low_timestep, max_timestep, (1,)).item()
+                t = torch.randint(int(low_timestep), int(max_timestep), (1,)).item()
 
                 batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
                 masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
@@ -237,18 +262,24 @@ class Trainer:
 
                 val_total_loss += val_batch_loss.item() 
                 val_losses_batch.append(val_batch_loss.item()) 
+                '''
         
             avg_train_loss = train_total_loss / len(self.train_loader)
             print(f"epoch loss: {avg_train_loss}")
+            logger.info(f"Epoch {epoch} average training loss: {avg_train_loss:.4f}")
             train_losses.append(avg_train_loss)
 
+            '''
             avg_val_loss = val_total_loss/len(self.val_loader) 
             print(f"epoch loss val: {avg_train_loss}")
             val_losses.append(avg_val_loss)
+            '''
 
         plot(self.job_name, train_losses_batch, val_losses_batch, train_losses, val_losses, self.output_dir)
 
         torch.save(self.model, self.output_dir + f'/{self.job_name}_weights.pth')
+        logger.info("Training completed and model saved.")
+    
 
 
 
@@ -261,13 +292,15 @@ def plot(job_name, batch_train_losses, batch_val_losses, epoch_train_loses, epoc
         plt.ylabel("Loss")
         plt.title("Train Batch Loss")
         plt.savefig(output_dir + f'/{job_name}_batch_loss_train.png')
-  
+
+        '''
         plt.figure()
         plt.plot(batch_val_losses)
         plt.xlabel("Batches")
         plt.ylabel("Loss")
         plt.title("Val Batch Loss")
         plt.savefig(output_dir + f'/{job_name}_batch_loss_val.png')
+        '''
 
         plt.figure()
         plt.plot(epoch_train_loses)
@@ -276,12 +309,14 @@ def plot(job_name, batch_train_losses, batch_val_losses, epoch_train_loses, epoc
         plt.title("Train epoch Loss")
         plt.savefig(output_dir + f'/{job_name}_epoch_loss_train.png')
 
+        '''
         plt.figure()
         plt.plot(epoch_val_losses)
         plt.xlabel("epoch")
         plt.ylabel("Loss")
         plt.title("Val epoch Loss")
         plt.savefig(output_dir + f'/{job_name}_epoch_loss_val.png')
+        '''
 
 
 
