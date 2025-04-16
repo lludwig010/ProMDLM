@@ -1,0 +1,72 @@
+2025-04-16 18:11:38,172 - INFO - num train data points: 130
+2025-04-16 18:11:38,173 - INFO - Starting epoch: 0
+2025-04-16 18:11:38,177 - INFO - Training batch num: 0
+2025-04-16 18:12:01,445 - INFO - Training batch num: 10
+2025-04-16 18:12:24,421 - INFO - Training batch num: 20
+2025-04-16 18:12:47,398 - INFO - Training batch num: 30
+2025-04-16 18:13:10,374 - INFO - Training batch num: 40
+2025-04-16 18:13:33,351 - INFO - Training batch num: 50
+2025-04-16 18:13:56,328 - INFO - Training batch num: 60
+2025-04-16 18:14:19,303 - INFO - Training batch num: 70
+2025-04-16 18:14:42,279 - INFO - Training batch num: 80
+2025-04-16 18:15:05,254 - INFO - Training batch num: 90
+2025-04-16 18:15:28,231 - INFO - Training batch num: 100
+2025-04-16 18:15:51,207 - INFO - Training batch num: 110
+2025-04-16 18:16:14,184 - INFO - Training batch num: 120
+2025-04-16 18:16:36,049 - INFO - Epoch 0 average training loss: 0.3022
+2025-04-16 18:16:36,049 - INFO - Starting epoch: 1
+2025-04-16 18:16:36,052 - INFO - Training batch num: 0
+2025-04-16 18:16:59,028 - INFO - Training batch num: 10
+2025-04-16 18:17:22,004 - INFO - Training batch num: 20
+2025-04-16 18:17:44,981 - INFO - Training batch num: 30
+2025-04-16 18:18:07,957 - INFO - Training batch num: 40
+2025-04-16 18:18:30,934 - INFO - Training batch num: 50
+2025-04-16 18:18:53,910 - INFO - Training batch num: 60
+2025-04-16 18:19:16,887 - INFO - Training batch num: 70
+2025-04-16 18:19:39,863 - INFO - Training batch num: 80
+2025-04-16 18:20:02,839 - INFO - Training batch num: 90
+2025-04-16 18:20:25,815 - INFO - Training batch num: 100
+2025-04-16 18:20:48,793 - INFO - Training batch num: 110
+2025-04-16 18:21:11,771 - INFO - Training batch num: 120
+2025-04-16 18:21:33,638 - INFO - Epoch 1 average training loss: 0.1282
+2025-04-16 18:21:33,638 - INFO - Starting epoch: 2
+2025-04-16 18:21:33,641 - INFO - Training batch num: 0
+2025-04-16 18:21:56,620 - INFO - Training batch num: 10
+2025-04-16 18:22:19,597 - INFO - Training batch num: 20
+2025-04-16 18:22:42,573 - INFO - Training batch num: 30
+2025-04-16 18:23:05,550 - INFO - Training batch num: 40
+2025-04-16 18:23:28,527 - INFO - Training batch num: 50
+2025-04-16 18:23:51,504 - INFO - Training batch num: 60
+2025-04-16 18:24:14,481 - INFO - Training batch num: 70
+2025-04-16 18:24:37,458 - INFO - Training batch num: 80
+2025-04-16 18:25:00,435 - INFO - Training batch num: 90
+2025-04-16 18:25:23,412 - INFO - Training batch num: 100
+2025-04-16 18:25:46,388 - INFO - Training batch num: 110
+2025-04-16 18:26:09,364 - INFO - Training batch num: 120
+2025-04-16 18:26:31,229 - INFO - Epoch 2 average training loss: 0.2109
+2025-04-16 18:26:31,229 - INFO - Starting epoch: 3
+2025-04-16 18:26:31,232 - INFO - Training batch num: 0
+2025-04-16 18:26:54,208 - INFO - Training batch num: 10
+2025-04-16 18:27:17,185 - INFO - Training batch num: 20
+2025-04-16 18:27:40,162 - INFO - Training batch num: 30
+2025-04-16 18:28:03,139 - INFO - Training batch num: 40
+2025-04-16 18:28:26,116 - INFO - Training batch num: 50
+2025-04-16 18:28:49,093 - INFO - Training batch num: 60
+2025-04-16 18:29:12,070 - INFO - Training batch num: 70
+2025-04-16 18:29:35,047 - INFO - Training batch num: 80
+2025-04-16 18:29:58,024 - INFO - Training batch num: 90
+2025-04-16 18:30:21,002 - INFO - Training batch num: 100
+2025-04-16 18:30:43,980 - INFO - Training batch num: 110
+2025-04-16 18:31:06,956 - INFO - Training batch num: 120
+2025-04-16 18:31:28,822 - INFO - Epoch 3 average training loss: 0.3526
+2025-04-16 18:31:28,822 - INFO - Starting epoch: 4
+2025-04-16 18:31:28,825 - INFO - Training batch num: 0
+2025-04-16 18:31:51,802 - INFO - Training batch num: 10
+2025-04-16 18:32:14,779 - INFO - Training batch num: 20
+2025-04-16 18:32:37,756 - INFO - Training batch num: 30
+2025-04-16 18:33:00,732 - INFO - Training batch num: 40
+2025-04-16 18:33:23,710 - INFO - Training batch num: 50
+2025-04-16 18:33:46,688 - INFO - Training batch num: 60
+2025-04-16 18:34:09,665 - INFO - Training batch num: 70
+2025-04-16 18:34:32,641 - INFO - Training batch num: 80
+2025-04-16 18:34:55,618 - INFO - Training batch num: 90
