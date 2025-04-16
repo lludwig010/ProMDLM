@@ -321,7 +321,7 @@ def plot(job_name, batch_train_losses, batch_val_losses, epoch_train_loses, epoc
 
 
 def train_main():
-    config = OmegaConf.load("configs/L_config.yaml")
+    config = OmegaConf.load("configs/g_config.yaml")
     os.makedirs(config.paths.output_dir, exist_ok=True)
 
     train_file_pkl = config.paths.train_file
@@ -371,8 +371,6 @@ def train_main():
         train_losses, model = trainer.train_increment_diffusion()
 
     print("Training complete. Saving model.")
-    model.save_pretrained(output_dir)
-
     return train_losses, model
 
 

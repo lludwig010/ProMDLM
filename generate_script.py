@@ -4,13 +4,14 @@ from models import DiffusionProteinLanguageModel
 import torch
 
 
-cfg = OmegaConf.load("configs/config_150m.yaml")
-model = DiffusionProteinLanguageModel.from_pretrained("facebook/esm2_t30_150M_UR50D", cfg_override=cfg)
+#cfg = OmegaConf.load("configs/config_150m.yaml")
+#model = DiffusionProteinLanguageModel.from_pretrained("facebook/esm2_t30_150M_UR50D", cfg_override=cfg, from_huggingface=False)
+model = torch.load("/home/jtso3/ghassan/ProMDLM/training_results/initial_test/g_run_scheme_1_weights.pth", weights_only=False)
 device = torch.device("cuda:0")
 model = model.to(device)
 tokenizer =  AutoTokenizer.from_pretrained("facebook/esm2_t30_150M_UR50D")
 
-generation_length = 100
+generation_length = 286
 nb_generated_sequences = 4
 
 
