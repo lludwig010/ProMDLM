@@ -39,27 +39,23 @@ class Trainer:
         val_losses = [] 
         train_losses_batch = []
         val_losses_batch=[]
-        print("num train data points:")
-        print(len(self.train_loader))
 
         for self.epoch in range(self.epochs):
+
             print(f"doing epoch: {self.epoch}")
 
             self.model.train()
             train_total_loss = 0.0
             val_total_loss = 0.0
-
-            num = 0
-
+            nb_batches_train = len(self.train_loader)
 
             #load in the batches of sequences
             self.model.train()
             
-            for batched_sequences_tokenized in self.train_loader:
-                #print(f"batch num {num}")
+            for i, batched_sequences_tokenized in enumerate(self.train_loader):
+                print(f"Training batch: {i}/{nb_batches_train}")
 
                 batch_size = batched_sequences_tokenized.shape
-
                 size_to_mask = batch_size[0]
 
                 #remove start and end tokens so that length is 286
@@ -84,18 +80,21 @@ class Trainer:
 
                 train_total_loss += batch_loss.item()
 
-                num+= 1
 
             self.model.eval()
-            #print("Validation")
+            print("Validation")
             torch.cuda.empty_cache()
-            for batched_sequences_tokenized in self.val_loader:
+            nb_batches_val = len(self.val_loader)
+            
+            for i, batched_sequences_tokenized in enumerate(self.val_loader):
+                print(f"validation batch: {i}/{nb_batches_val}")
 
                 batch_size = batched_sequences_tokenized.shape
                 size_to_mask = batch_size[0]
 
                 #remove start and end tokens so that length is 286
                 batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
+                self.optimizer.zero_grad()
 
                 # sample time step
                 t = torch.randint(0, self.max_timesteps, (1,)).item()
@@ -116,39 +115,11 @@ class Trainer:
             print(f"epoch loss val: {avg_train_loss}")
             val_losses.append(avg_val_loss)
 
-
-        plt.figure()
-        plt.plot(train_losses_batch)
-        plt.xlabel("Batches")
-        plt.ylabel("Loss")
-        plt.title("Train Batch Loss")
-        plt.savefig(self.output_dir + '/batch_loss_train.png')
-  
-        plt.figure()
-        plt.plot(val_losses_batch)
-        plt.xlabel("Batches")
-        plt.ylabel("Loss")
-        plt.title("Val Batch Loss")
-        plt.savefig(self.output_dir + '/batch_loss_val.png')
-
-        plt.figure()
-        plt.plot(train_losses)
-        plt.xlabel("epoch")
-        plt.ylabel("Loss")
-        plt.title("Train epoch Loss")
-        plt.savefig(self.output_dir + '/epoch_loss_train.png')
-
-        plt.figure()
-        plt.plot(val_losses)
-        plt.xlabel("epoch")
-        plt.ylabel("Loss")
-        plt.title("Val epoch Loss")
-        plt.savefig(self.output_dir + '/epoch_loss_val.png')
+        plot(self.job_name, train_losses_batch, val_losses_batch, train_losses, val_losses, self.output_dir)
 
         #save the weights at the end of training
         torch.save(self.model, self.output_dir + f'/{self.job_name}_weights.pth')
 
- 
         return train_losses, self.model
 
     def train_increment_diffusion(self):
@@ -158,11 +129,11 @@ class Trainer:
         val_losses = [] 
         train_losses_batch = []
         val_losses_batch=[]
-        print("num train data points:")
-        print(len(self.train_loader))
+
+        
 
         logging.basicConfig(
-            filename='training_increment.log',
+            filename='training_increment_ghassan.log',
             filemode='w',  # 'a' for append, 'w' to overwrite each time
             format='%(asctime)s - %(levelname)s - %(message)s',
             level=logging.INFO
@@ -173,21 +144,21 @@ class Trainer:
 
         
         for epoch in range(self.epochs):
+
             print(f"doing epoch: {epoch}")
             logger.info(f"Starting epoch: {epoch}")
 
             self.model.train()
             train_total_loss = 0.0
             val_total_loss = 0.0
+            nb_batch_train = len(self.train_loader)
 
-            num = 0
-            #load in the batches of sequences
             self.model.train()
             
-            for batched_sequences_tokenized in self.train_loader:
-                if (num % 10 == 0):
-                    print(f"batch num {num}")
-                    logger.info(f"Training batch num: {num}")
+            for i, batched_sequences_tokenized in enumerate(self.train_loader):
+                
+                print(f"Training batch {i}/{nb_batch_train}")
+                logger.info(f"Training batch {i}/{nb_batch_train}")
 
                 batch_size = batched_sequences_tokenized.shape
 
@@ -204,13 +175,6 @@ class Trainer:
                 # define range for possible timesteps to sample between. upper and lower bound are 10% away from current timestep
                 low_timestep = max(0, timestep - 0.1 * self.max_timesteps)
                 max_timestep = min(self.max_timesteps, timestep + 0.1 * self.max_timesteps)
-
-                '''
-                print(low_timestep)
-                print(type(low_timestep))
-                print(max_timestep)
-                print(type(max_timestep))
-                '''
 
                 t = torch.randint(int(low_timestep), int(max_timestep), (1,)).item()
 
@@ -229,15 +193,15 @@ class Trainer:
 
                 train_total_loss += batch_loss.item()
 
-                num+= 1
-
             self.model.eval()
             print("Validation")
-            '''
             torch.cuda.empty_cache()
-            for batched_sequences_tokenized in self.val_loader:
-                if (num % 10 == 0):
-                    print(f"batch num {num}")
+            nb_batches_val = len(self.val_loader)
+
+            torch.cuda.empty_cache()
+            for i, batched_sequences_tokenized in enumerate(self.val_loader):
+                print(f"validation batch: {i}/{nb_batches_val}")
+                logger.info(f"Validation batch: {i}/{nb_batches_val}")
 
                 batch_size = batched_sequences_tokenized.shape
                 size_to_mask = batch_size[0]
@@ -262,23 +226,25 @@ class Trainer:
 
                 val_total_loss += val_batch_loss.item() 
                 val_losses_batch.append(val_batch_loss.item()) 
-                '''
+
+                
         
             avg_train_loss = train_total_loss / len(self.train_loader)
-            print(f"epoch loss: {avg_train_loss}")
+            print(f"epoch loss train: {avg_train_loss}")
             logger.info(f"Epoch {epoch} average training loss: {avg_train_loss:.4f}")
             train_losses.append(avg_train_loss)
 
-            '''
+            
             avg_val_loss = val_total_loss/len(self.val_loader) 
             print(f"epoch loss val: {avg_train_loss}")
             val_losses.append(avg_val_loss)
-            '''
+    
 
         plot(self.job_name, train_losses_batch, val_losses_batch, train_losses, val_losses, self.output_dir)
 
         torch.save(self.model, self.output_dir + f'/{self.job_name}_weights.pth')
         logger.info("Training completed and model saved.")
+        return train_losses, self.model
     
 
 
@@ -293,14 +259,14 @@ def plot(job_name, batch_train_losses, batch_val_losses, epoch_train_loses, epoc
         plt.title("Train Batch Loss")
         plt.savefig(output_dir + f'/{job_name}_batch_loss_train.png')
 
-        '''
+        
         plt.figure()
         plt.plot(batch_val_losses)
         plt.xlabel("Batches")
         plt.ylabel("Loss")
         plt.title("Val Batch Loss")
         plt.savefig(output_dir + f'/{job_name}_batch_loss_val.png')
-        '''
+        
 
         plt.figure()
         plt.plot(epoch_train_loses)
@@ -309,14 +275,14 @@ def plot(job_name, batch_train_losses, batch_val_losses, epoch_train_loses, epoc
         plt.title("Train epoch Loss")
         plt.savefig(output_dir + f'/{job_name}_epoch_loss_train.png')
 
-        '''
+        
         plt.figure()
         plt.plot(epoch_val_losses)
         plt.xlabel("epoch")
         plt.ylabel("Loss")
         plt.title("Val epoch Loss")
         plt.savefig(output_dir + f'/{job_name}_epoch_loss_val.png')
-        '''
+        
 
 
 
@@ -351,10 +317,10 @@ def train_main():
     loss = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    train_dataset = CustomDataset(train_file_pkl, max_datapoints=None)
+    train_dataset = CustomDataset(train_file_pkl, max_datapoints= None)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-    val_dataset = CustomDataset(val_file_pkl)
+    val_dataset = CustomDataset(val_file_pkl, max_datapoints= None)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 
     trainer = Trainer(
