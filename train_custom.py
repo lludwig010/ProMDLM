@@ -121,6 +121,105 @@ class Trainer:
         torch.save(self.model, self.output_dir + f'/{self.job_name}_weights.pth')
 
         return train_losses, self.model
+    
+    def train_loop_two_stage(self):
+            # Training scheme where amount diffuse increases with time
+            
+            train_losses = []
+            val_losses = [] 
+            train_losses_batch = []
+            val_losses_batch=[]
+
+            for self.epoch in range(self.epochs):
+
+                print(f"doing epoch: {self.epoch}")
+
+                self.model.train()
+                train_total_loss = 0.0
+                val_total_loss = 0.0
+                nb_batches_train = len(self.train_loader)
+
+                #load in the batches of sequences
+                self.model.train()
+                
+                for i, batched_sequences_tokenized in enumerate(self.train_loader):
+                    print(f"Training batch: {i}/{nb_batches_train}")
+
+                    batch_size = batched_sequences_tokenized.shape
+                    size_to_mask = batch_size[0]
+
+                    #remove start and end tokens so that length is 286
+                    batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
+                    self.optimizer.zero_grad()
+
+                    # sample time step
+                    if self.epoch < self.epochs/2:
+                        # first half of training, 15% noise
+                        t = 0.15 * self.max_timesteps
+                    else:
+                        # second half of training, random noise sampling
+                        t = torch.randint(0, self.max_timesteps, (1,)).item()
+
+                    print(f"sampled timestep {t}")
+
+                    batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
+                    masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
+                    batch_pred_tokens = self.model(masked_batch_seq)
+                    batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
+
+                    batch_loss.backward()
+                    #print(f"batch loss: {batch_loss}")
+                    self.optimizer.step()
+
+                    train_losses_batch.append(batch_loss.item())
+
+                    train_total_loss += batch_loss.item()
+
+
+                self.model.eval()
+                print("Validation")
+                torch.cuda.empty_cache()
+                nb_batches_val = len(self.val_loader)
+                
+                for i, batched_sequences_tokenized in enumerate(self.val_loader):
+                    print(f"validation batch: {i}/{nb_batches_val}")
+
+                    batch_size = batched_sequences_tokenized.shape
+                    size_to_mask = batch_size[0]
+
+                    #remove start and end tokens so that length is 286
+                    batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
+                    self.optimizer.zero_grad()
+
+                    # sample time step
+                    if self.epoch < self.epochs/2:
+                        # first half of training, fixed timestep
+                        t = 0.15 * self.max_timesteps
+                    else:
+                        t = torch.randint(0, self.max_timesteps, (1,)).item()
+
+                    batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
+                    masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
+                    batch_pred_tokens = self.model(masked_batch_seq)
+                    val_batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
+
+                    val_total_loss += val_batch_loss.item() 
+                    val_losses_batch.append(val_batch_loss.item()) 
+            
+                avg_train_loss = train_total_loss / len(self.train_loader)
+                print(f"epoch loss train: {avg_train_loss}")
+                train_losses.append(avg_train_loss)
+
+                avg_val_loss = val_total_loss/len(self.val_loader) 
+                print(f"epoch loss val: {avg_train_loss}")
+                val_losses.append(avg_val_loss)
+
+            plot(self.job_name, train_losses_batch, val_losses_batch, train_losses, val_losses, self.output_dir)
+
+            #save the weights at the end of training
+            torch.save(self.model, self.output_dir + f'/{self.job_name}_weights.pth')
+
+            return train_losses, self.model
 
     def train_increment_diffusion(self):
         # Training scheme where amount diffuse increases with time
@@ -317,10 +416,10 @@ def train_main():
     loss = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    train_dataset = CustomDataset(train_file_pkl, max_datapoints= None)
+    train_dataset = CustomDataset(train_file_pkl, max_datapoints= 100)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-    val_dataset = CustomDataset(val_file_pkl, max_datapoints= None)
+    val_dataset = CustomDataset(val_file_pkl, max_datapoints= 50)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 
     trainer = Trainer(
@@ -331,10 +430,15 @@ def train_main():
 
     # default training scheme
     if training_scheme == 1:
+        print("Training scheme 1: full diffusion")
         train_losses, model = trainer.train_loop_fullDiff()
     # incremental diffusion
     elif training_scheme == 2:
+        print("Training scheme 2: incremental diffusion")
         train_losses, model = trainer.train_increment_diffusion()
+    elif training_scheme == 3:
+        print("Training scheme 3: two stage training")
+        train_losses, model = trainer.train_loop_two_stage()
 
     print("Training complete. Saving model.")
     return train_losses, model

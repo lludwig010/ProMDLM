@@ -5,16 +5,16 @@ paths:
   val_file: "/home/jtso3/ghassan/ProMDLM/PROMDLM/lactamase/tokenized_val_array.pkl"
   pretrained_model_cfg: "configs/config_150m.yaml"
   pretrained_model_name: "facebook/esm2_t30_150M_UR50D"
-  output_dir: "/home/jtso3/ghassan/ProMDLM/training_results/initial_test"
-  job_name: "g_run_scheme_1"
+  output_dir: "/home/jtso3/ghassan/ProMDLM/training_results/check_test_scheme_1"
+  job_name: "check_test_scheme_1"
 
 training:
   device: "cuda:0"
   learning_rate: 0.0001
   batch_size: 16
-  epochs: 3
+  epochs: 100
   max_timesteps: 100
   seq_len: 286
   vocab_size: 33
   weight_decay: 1e-5
-  scheme: 1
+  scheme: 3
