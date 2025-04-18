@@ -57,7 +57,7 @@ class Trainer:
             self.model.train()
             
             for i, batched_sequences_tokenized in enumerate(self.train_loader):
-                self.logger.info(f"Training batch: {i}/{nb_batches_train}")
+                if i%10 ==0: self.logger.info(f"Training batch: {i}/{nb_batches_train}")
 
                 batch_size = batched_sequences_tokenized.shape
                 size_to_mask = batch_size[0]
@@ -69,7 +69,7 @@ class Trainer:
                 # sample time step
                 t = torch.randint(0, self.max_timesteps, (1,)).item()
 
-                self.logger.info(f"sampled timestep {t}")
+                if i%10 ==0: self.logger.info(f"sampled timestep {t}")
 
                 batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
                 masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
@@ -77,7 +77,7 @@ class Trainer:
                 batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
 
                 batch_loss.backward()
-                #self.logger.info(f"batch loss: {batch_loss}")
+                if i%10 ==0: self.logger.info(f"batch loss: {batch_loss}")
                 self.optimizer.step()
 
                 train_losses_batch.append(batch_loss.item())
@@ -147,7 +147,8 @@ class Trainer:
                 self.model.train()
                 
                 for i, batched_sequences_tokenized in enumerate(self.train_loader):
-                    self.logger.info(f"Training batch: {i}/{nb_batches_train}")
+                    if i%10==0:
+                        self.logger.info(f"Training batch: {i}/{nb_batches_train}")
 
                     batch_size = batched_sequences_tokenized.shape
                     size_to_mask = batch_size[0]
@@ -164,7 +165,7 @@ class Trainer:
                         # second half of training, random noise sampling
                         t = torch.randint(0, self.max_timesteps, (1,)).item()
 
-                    self.logger.info(f"sampled timestep {t}")
+                    if i%10 == 0: self.logger.info(f"sampled timestep {t}")
 
                     batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
                     masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
@@ -172,7 +173,8 @@ class Trainer:
                     batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
 
                     batch_loss.backward()
-                    #self.logger.info(f"batch loss: {batch_loss}")
+                    
+                    if i%10 == 0: self.logger.info(f"batch loss: {batch_loss}")
                     self.optimizer.step()
 
                     train_losses_batch.append(batch_loss.item())
@@ -250,7 +252,7 @@ class Trainer:
             
             for i, batched_sequences_tokenized in enumerate(self.train_loader):
                 
-                self.logger.info(f"Training batch {i}/{nb_batch_train}")
+                if i%10 ==0: self.logger.info(f"Training batch {i}/{nb_batch_train}")
 
                 batch_size = batched_sequences_tokenized.shape
 
@@ -271,7 +273,7 @@ class Trainer:
                 t = torch.randint(int(low_timestep), int(max_timestep), (1,)).item()
                 self.logger.info(f"sampled timestep {t}")
 
-                #self.logger.info(f"sampled timestep {t}")
+                if i%10 ==0: self.logger.info(f"sampled timestep {t}")
 
                 batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
                 masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
@@ -279,7 +281,7 @@ class Trainer:
                 batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
 
                 batch_loss.backward()
-                #self.logger.info(f"batch loss: {batch_loss}")
+                if i%10 ==0: self.logger.info(f"batch loss: {batch_loss}")
                 self.optimizer.step()
 
                 train_losses_batch.append(batch_loss.item())
