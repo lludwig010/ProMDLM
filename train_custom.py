@@ -421,6 +421,9 @@ def train_main():
 
     val_dataset = CustomDataset(val_file_pkl, max_datapoints= 50)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+    
+    print(f"Number of training samples: {len(train_dataset)}")
+    print(f"Number of validation samples: {len(val_dataset)}")
 
     trainer = Trainer(
         model, optimizer, loss, num_epochs, train_loader, val_loader,
