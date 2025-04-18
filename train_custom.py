@@ -13,9 +13,10 @@ from models.Dataset import CustomDataset
 import logging
 import torch
 import os
+import time
 
 class Trainer:
-    def __init__(self, model, optimizer, loss_function, epochs, train_loader, val_loader, max_timesteps, batch_size, seq_len, vocab_size, device, output_dir, job_name="TEST"):
+    def __init__(self, model, optimizer, loss_function, epochs, train_loader, val_loader, max_timesteps, batch_size, seq_len, vocab_size, device, output_dir, job_name="TEST", validation = False):
 
         self.model = model
         self.optimizer = optimizer
@@ -30,6 +31,7 @@ class Trainer:
         self.device = device
         self.output_dir = output_dir
         self.job_name = job_name
+        self.validation = validation
 
 
     def train_loop_fullDiff(self):
@@ -59,7 +61,7 @@ class Trainer:
                 size_to_mask = batch_size[0]
 
                 #remove start and end tokens so that length is 286
-                batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
+                batched_sequences_tokenized = batched_sequences_tokenized[:,:].to(self.device)  # remove eos?
                 self.optimizer.zero_grad()
 
                 # sample time step
@@ -79,41 +81,41 @@ class Trainer:
                 train_losses_batch.append(batch_loss.item())
 
                 train_total_loss += batch_loss.item()
-
-
-            self.model.eval()
-            print("Validation")
-            torch.cuda.empty_cache()
-            nb_batches_val = len(self.val_loader)
             
-            for i, batched_sequences_tokenized in enumerate(self.val_loader):
-                print(f"validation batch: {i}/{nb_batches_val}")
-
-                batch_size = batched_sequences_tokenized.shape
-                size_to_mask = batch_size[0]
-
-                #remove start and end tokens so that length is 286
-                batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
-                self.optimizer.zero_grad()
-
-                # sample time step
-                t = torch.randint(0, self.max_timesteps, (1,)).item()
-
-                batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
-                masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
-                batch_pred_tokens = self.model(masked_batch_seq)
-                val_batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
-
-                val_total_loss += val_batch_loss.item() 
-                val_losses_batch.append(val_batch_loss.item()) 
-        
             avg_train_loss = train_total_loss / len(self.train_loader)
             print(f"epoch loss train: {avg_train_loss}")
             train_losses.append(avg_train_loss)
 
-            avg_val_loss = val_total_loss/len(self.val_loader) 
-            print(f"epoch loss val: {avg_train_loss}")
-            val_losses.append(avg_val_loss)
+            if self.validation:
+                self.model.eval()
+                print("Validation")
+                torch.cuda.empty_cache()
+                nb_batches_val = len(self.val_loader)
+                
+                for i, batched_sequences_tokenized in enumerate(self.val_loader):
+                    print(f"validation batch: {i}/{nb_batches_val}")
+
+                    batch_size = batched_sequences_tokenized.shape
+                    size_to_mask = batch_size[0]
+
+                    #remove start and end tokens so that length is 286
+                    batched_sequences_tokenized = batched_sequences_tokenized[:,:].to(self.device)  # remove eos?
+                    self.optimizer.zero_grad()
+
+                    # sample time step
+                    t = torch.randint(0, self.max_timesteps, (1,)).item()
+
+                    batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
+                    masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
+                    batch_pred_tokens = self.model(masked_batch_seq)
+                    val_batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
+
+                    val_total_loss += val_batch_loss.item() 
+                    val_losses_batch.append(val_batch_loss.item()) 
+
+                avg_val_loss = val_total_loss/len(self.val_loader) 
+                print(f"epoch loss val: {avg_train_loss}")
+                val_losses.append(avg_val_loss)
 
         plot(self.job_name, train_losses_batch, val_losses_batch, train_losses, val_losses, self.output_dir)
 
@@ -149,7 +151,7 @@ class Trainer:
                     size_to_mask = batch_size[0]
 
                     #remove start and end tokens so that length is 286
-                    batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
+                    batched_sequences_tokenized = batched_sequences_tokenized[:,:].to(self.device)  # remove eos?
                     self.optimizer.zero_grad()
 
                     # sample time step
@@ -174,45 +176,45 @@ class Trainer:
                     train_losses_batch.append(batch_loss.item())
 
                     train_total_loss += batch_loss.item()
-
-
-                self.model.eval()
-                print("Validation")
-                torch.cuda.empty_cache()
-                nb_batches_val = len(self.val_loader)
                 
-                for i, batched_sequences_tokenized in enumerate(self.val_loader):
-                    print(f"validation batch: {i}/{nb_batches_val}")
-
-                    batch_size = batched_sequences_tokenized.shape
-                    size_to_mask = batch_size[0]
-
-                    #remove start and end tokens so that length is 286
-                    batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
-                    self.optimizer.zero_grad()
-
-                    # sample time step
-                    if self.epoch < self.epochs/2:
-                        # first half of training, fixed timestep
-                        t = 0.15 * self.max_timesteps
-                    else:
-                        t = torch.randint(0, self.max_timesteps, (1,)).item()
-
-                    batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
-                    masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
-                    batch_pred_tokens = self.model(masked_batch_seq)
-                    val_batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
-
-                    val_total_loss += val_batch_loss.item() 
-                    val_losses_batch.append(val_batch_loss.item()) 
-            
                 avg_train_loss = train_total_loss / len(self.train_loader)
                 print(f"epoch loss train: {avg_train_loss}")
                 train_losses.append(avg_train_loss)
 
-                avg_val_loss = val_total_loss/len(self.val_loader) 
-                print(f"epoch loss val: {avg_train_loss}")
-                val_losses.append(avg_val_loss)
+                if self.validation:
+                    self.model.eval()
+                    print("Validation")
+                    torch.cuda.empty_cache()
+                    nb_batches_val = len(self.val_loader)
+                
+                    for i, batched_sequences_tokenized in enumerate(self.val_loader):
+                        print(f"validation batch: {i}/{nb_batches_val}")
+
+                        batch_size = batched_sequences_tokenized.shape
+                        size_to_mask = batch_size[0]
+
+                        #remove start and end tokens so that length is 286
+                        batched_sequences_tokenized = batched_sequences_tokenized[:,:].to(self.device)  # remove eos?
+                        self.optimizer.zero_grad()
+
+                        # sample time step
+                        if self.epoch < self.epochs/2:
+                            # first half of training, fixed timestep
+                            t = 0.15 * self.max_timesteps
+                        else:
+                            t = torch.randint(0, self.max_timesteps, (1,)).item()
+
+                        batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
+                        masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
+                        batch_pred_tokens = self.model(masked_batch_seq)
+                        val_batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
+
+                        val_total_loss += val_batch_loss.item() 
+                        val_losses_batch.append(val_batch_loss.item()) 
+
+                    avg_val_loss = val_total_loss/len(self.val_loader) 
+                    print(f"epoch loss val: {avg_train_loss}")
+                    val_losses.append(avg_val_loss)
 
             plot(self.job_name, train_losses_batch, val_losses_batch, train_losses, val_losses, self.output_dir)
 
@@ -264,7 +266,7 @@ class Trainer:
                 size_to_mask = batch_size[0]
 
                 #remove start and end tokens so that length is 286
-                batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
+                batched_sequences_tokenized = batched_sequences_tokenized[:,:].to(self.device)  # remove eos?
                 self.optimizer.zero_grad()
 
                 # sample time step based off of the epoch training is on 
@@ -291,52 +293,51 @@ class Trainer:
                 train_losses_batch.append(batch_loss.item())
 
                 train_total_loss += batch_loss.item()
-
-            self.model.eval()
-            print("Validation")
-            torch.cuda.empty_cache()
-            nb_batches_val = len(self.val_loader)
-
-            torch.cuda.empty_cache()
-            for i, batched_sequences_tokenized in enumerate(self.val_loader):
-                print(f"validation batch: {i}/{nb_batches_val}")
-                logger.info(f"Validation batch: {i}/{nb_batches_val}")
-
-                batch_size = batched_sequences_tokenized.shape
-                size_to_mask = batch_size[0]
-
-                #remove start and end tokens so that length is 286
-                batched_sequences_tokenized = batched_sequences_tokenized[:,1:-1].to(self.device)
-
-                # sample time step
-
-                timestep = (epoch/self.epochs) * self.max_timesteps
-
-                # define range for possible timesteps to sample between. upper and lower bound are 10% away from current timestep
-                low_timestep = max(0, timestep - 0.1 * self.max_timesteps)
-                max_timestep = min(self.max_timesteps, timestep + 0.1 * self.max_timesteps)
-
-                t = torch.randint(int(low_timestep), int(max_timestep), (1,)).item()
-
-                batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
-                masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
-                batch_pred_tokens = self.model(masked_batch_seq)
-                val_batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
-
-                val_total_loss += val_batch_loss.item() 
-                val_losses_batch.append(val_batch_loss.item()) 
-
-                
-        
+            
             avg_train_loss = train_total_loss / len(self.train_loader)
             print(f"epoch loss train: {avg_train_loss}")
             logger.info(f"Epoch {epoch} average training loss: {avg_train_loss:.4f}")
             train_losses.append(avg_train_loss)
 
+            if self.validation:
+
+                self.model.eval()
+                print("Validation")
+                torch.cuda.empty_cache()
+                nb_batches_val = len(self.val_loader)
+
+                torch.cuda.empty_cache()
+                for i, batched_sequences_tokenized in enumerate(self.val_loader):
+                    print(f"validation batch: {i}/{nb_batches_val}")
+                    logger.info(f"Validation batch: {i}/{nb_batches_val}")
+
+                    batch_size = batched_sequences_tokenized.shape
+                    size_to_mask = batch_size[0]
+
+                    #remove start and end tokens so that length is 286
+                    batched_sequences_tokenized = batched_sequences_tokenized[:,:].to(self.device)  # remove eos?
+
+                    # sample time step
+
+                    timestep = (epoch/self.epochs) * self.max_timesteps
+
+                    # define range for possible timesteps to sample between. upper and lower bound are 10% away from current timestep
+                    low_timestep = max(0, timestep - 0.1 * self.max_timesteps)
+                    max_timestep = min(self.max_timesteps, timestep + 0.1 * self.max_timesteps)
+
+                    t = torch.randint(int(low_timestep), int(max_timestep), (1,)).item()
+
+                    batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
+                    masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
+                    batch_pred_tokens = self.model(masked_batch_seq)
+                    val_batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
+
+                    val_total_loss += val_batch_loss.item() 
+                    val_losses_batch.append(val_batch_loss.item()) 
             
-            avg_val_loss = val_total_loss/len(self.val_loader) 
-            print(f"epoch loss val: {avg_train_loss}")
-            val_losses.append(avg_val_loss)
+                avg_val_loss = val_total_loss/len(self.val_loader) 
+                print(f"epoch loss val: {avg_train_loss}")
+                val_losses.append(avg_val_loss)
     
 
         plot(self.job_name, train_losses_batch, val_losses_batch, train_losses, val_losses, self.output_dir)
@@ -358,13 +359,13 @@ def plot(job_name, batch_train_losses, batch_val_losses, epoch_train_loses, epoc
         plt.title("Train Batch Loss")
         plt.savefig(output_dir + f'/{job_name}_batch_loss_train.png')
 
-        
-        plt.figure()
-        plt.plot(batch_val_losses)
-        plt.xlabel("Batches")
-        plt.ylabel("Loss")
-        plt.title("Val Batch Loss")
-        plt.savefig(output_dir + f'/{job_name}_batch_loss_val.png')
+        if len(batch_val_losses) > 0:
+            plt.figure()
+            plt.plot(batch_val_losses)
+            plt.xlabel("Batches")
+            plt.ylabel("Loss")
+            plt.title("Val Batch Loss")
+            plt.savefig(output_dir + f'/{job_name}_batch_loss_val.png')
         
 
         plt.figure()
@@ -374,13 +375,13 @@ def plot(job_name, batch_train_losses, batch_val_losses, epoch_train_loses, epoc
         plt.title("Train epoch Loss")
         plt.savefig(output_dir + f'/{job_name}_epoch_loss_train.png')
 
-        
-        plt.figure()
-        plt.plot(epoch_val_losses)
-        plt.xlabel("epoch")
-        plt.ylabel("Loss")
-        plt.title("Val epoch Loss")
-        plt.savefig(output_dir + f'/{job_name}_epoch_loss_val.png')
+        if len(epoch_val_losses) > 0:
+            plt.figure()
+            plt.plot(epoch_val_losses)
+            plt.xlabel("epoch")
+            plt.ylabel("Loss")
+            plt.title("Val epoch Loss")
+            plt.savefig(output_dir + f'/{job_name}_epoch_loss_val.png')
         
 
 
@@ -405,6 +406,7 @@ def train_main():
     # added job name for naming runs
     job_name = config.paths.job_name
     output_dir = config.paths.output_dir
+    validation = config.training.validation
 
 
 
@@ -416,10 +418,10 @@ def train_main():
     loss = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    train_dataset = CustomDataset(train_file_pkl, max_datapoints= 100)
+    train_dataset = CustomDataset(train_file_pkl, max_datapoints= None)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-    val_dataset = CustomDataset(val_file_pkl, max_datapoints= 50)
+    val_dataset = CustomDataset(val_file_pkl, max_datapoints= 100)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
     
     print(f"Number of training samples: {len(train_dataset)}")
@@ -427,7 +429,7 @@ def train_main():
 
     trainer = Trainer(
         model, optimizer, loss, num_epochs, train_loader, val_loader,
-        max_timesteps, batch_size, seq_len, vocab_size, device, output_dir, job_name
+        max_timesteps, batch_size, seq_len, vocab_size, device, output_dir, job_name, validation
     )
 
 
@@ -443,11 +445,13 @@ def train_main():
         print("Training scheme 3: two stage training")
         train_losses, model = trainer.train_loop_two_stage()
 
-    print("Training complete. Saving model.")
+    print(f"Training complete. Saving model under {output_dir}")
     return train_losses, model
 
 
 
 if __name__ == "__main__":
+    start = time.perf_counter()
     torch.cuda.empty_cache()
     train_main()
+    print(f"Training took {time.perf_counter() - start} seconds")
