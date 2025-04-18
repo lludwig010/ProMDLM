@@ -5,11 +5,11 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 import matplotlib.pyplot as plt
 import numpy as np
-from PROMDLM.scheduler import noise_schedule, scheduler_loss_fn, apply_noise
+from models.scheduler import noise_schedule, scheduler_loss_fn, apply_noise
 from transformers import AutoTokenizer
 from omegaconf import OmegaConf
 from models import DiffusionProteinLanguageModel
-from PROMDLM.lactamase.Dataset import CustomDataset
+from models.Dataset import CustomDataset
 import logging
 import torch
 import os
