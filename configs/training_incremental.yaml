@@ -5,7 +5,7 @@ paths:
   val_file: "/home/jtso3/ghassan/ProMDLM/data/lyzozyme_val.pkl"
   pretrained_model_cfg: "configs/config_150m.yaml"
   pretrained_model_name: "facebook/esm2_t30_150M_UR50D"
-  output_dir: "/home/jtso3/ghassan/ProMDLM/training_results/greatest_test_increment"
+  output_dir: "/home/jtso3/ghassan/ProMDLM/training_results/big_increment_training"
 
 training:
   device: "cuda:0"
