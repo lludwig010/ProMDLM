@@ -1,3 +1,2 @@
-test commit from rockfish
-test laurent
-test commit
+first run prepare.py to generate the pkl array of sequences ready to go.
+then train using train_custom.py
