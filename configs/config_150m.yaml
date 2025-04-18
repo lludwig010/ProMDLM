@@ -3,7 +3,7 @@ name: "dplm_150m"
 
 datamodule:
   max_tokens: 6000
-  max_len: 1022
+  max_len: 282
   mini_run: false
 
 model:

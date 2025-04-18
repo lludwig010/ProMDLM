@@ -68,6 +68,7 @@ class Trainer:
 
                 # sample time step
                 t = torch.randint(0, self.max_timesteps, (1,)).item()
+                if i ==10: t=500
 
                 if i%10 ==0: self.logger.info(f"sampled timestep {t}")
 
@@ -77,12 +78,17 @@ class Trainer:
                 batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
 
                 batch_loss.backward()
-                if i%10 ==0: self.logger.info(f"batch loss: {batch_loss}")
-                self.optimizer.step()
 
-                train_losses_batch.append(batch_loss.item())
+                try:
+                    norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0, error_if_nonfinite=True) # gradient clipping
+                    self.optimizer.step()
+                    if i%10 ==0: self.logger.info(f"batch loss: {batch_loss}")
+                    train_losses_batch.append(batch_loss.item())
+                    train_total_loss += batch_loss.item()
 
-                train_total_loss += batch_loss.item()
+                except RuntimeError as e:
+                    self.logger.warning(f"GRADIENTS EXPLODED FOR BATCH {i} TIMESTEP {t}, WE DO NOT UPDATE THE WEIGHTS.")
+
             
             avg_train_loss = train_total_loss / len(self.train_loader)
             self.logger.info(f"epoch loss train: {avg_train_loss}")
@@ -174,12 +180,15 @@ class Trainer:
 
                     batch_loss.backward()
                     
-                    if i%10 == 0: self.logger.info(f"batch loss: {batch_loss}")
-                    self.optimizer.step()
+                    try:
+                        norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0, error_if_nonfinite=True) # gradient clipping
+                        self.optimizer.step()
+                        if i%10 ==0: self.logger.info(f"batch loss: {batch_loss}")
+                        train_losses_batch.append(batch_loss.item())
+                        train_total_loss += batch_loss.item()
 
-                    train_losses_batch.append(batch_loss.item())
-
-                    train_total_loss += batch_loss.item()
+                    except RuntimeError as e:
+                        self.logger.warning(f"GRADIENTS EXPLODED FOR BATCH {i} TIMESTEP {t}, WE DO NOT UPDATE THE WEIGHTS.")
                 
                 avg_train_loss = train_total_loss / len(self.train_loader)
                 self.logger.info(f"epoch loss train: {avg_train_loss}")
@@ -281,12 +290,17 @@ class Trainer:
                 batch_loss = scheduler_loss_fn(batch_pred_tokens, batched_sequences_tokenized, masked_batch_seq, self.vocab_size)
 
                 batch_loss.backward()
-                if i%10 ==0: self.logger.info(f"batch loss: {batch_loss}")
-                self.optimizer.step()
 
-                train_losses_batch.append(batch_loss.item())
+                try:
+                    norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0, error_if_nonfinite=True) # gradient clipping
+                    self.optimizer.step()
+                    if i%10 ==0: self.logger.info(f"batch loss: {batch_loss}")
+                    train_losses_batch.append(batch_loss.item())
+                    train_total_loss += batch_loss.item()
 
-                train_total_loss += batch_loss.item()
+                except RuntimeError as e:
+                    self.logger.warning(f"GRADIENTS EXPLODED FOR BATCH {i} TIMESTEP {t}, WE DO NOT UPDATE THE WEIGHTS.")
+
             
             avg_train_loss = train_total_loss / len(self.train_loader)
             self.logger.info(f"epoch loss train: {avg_train_loss}")
@@ -384,7 +398,7 @@ def train_main():
     start = time.perf_counter()
 
 
-    config_path = "configs/training_two_stage.yaml"
+    config_path = "configs/training_fulldiff.yaml"
     config = OmegaConf.load(config_path)
     os.makedirs(config.paths.output_dir, exist_ok=True)
     shutil.copy(config_path, os.path.join(config.paths.output_dir, "config_used.yaml")) #copy config file to output dir
@@ -428,7 +442,7 @@ def train_main():
     loss = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    train_dataset = CustomDataset(train_file_pkl, max_datapoints= None)
+    train_dataset = CustomDataset(train_file_pkl, max_datapoints= 3000)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
     val_dataset = CustomDataset(val_file_pkl, max_datapoints= 100)

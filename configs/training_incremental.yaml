@@ -12,7 +12,7 @@ training:
   learning_rate: 0.0001
   batch_size: 32
   epochs: 5
-  max_timesteps: 100
+  max_timesteps: 500
   seq_len: 282
   vocab_size: 33
   weight_decay: 1e-5
