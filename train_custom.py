@@ -442,10 +442,10 @@ def train_main():
     loss = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    train_dataset = CustomDataset(train_file_pkl, max_datapoints= 3000)
+    train_dataset = CustomDataset(train_file_pkl, max_datapoints= None)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-    val_dataset = CustomDataset(val_file_pkl, max_datapoints= 100)
+    val_dataset = CustomDataset(val_file_pkl, max_datapoints= 10)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
     
     logger.info(f"Number of training samples: {len(train_dataset)}")

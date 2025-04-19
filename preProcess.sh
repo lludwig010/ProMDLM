@@ -5,7 +5,7 @@
 #SBATCH --gres=gpu:1                   
 #SBATCH --qos=mig_class
 #SBATCH --output=/home/en540-lludwig2/ProMDLM/trainCustom.log
-#SBATCH --time=13:00:00
+#SBATCH --time=01:00:00
 #SBATCH --export=ALL
 
 module load miniconda3
@@ -15,4 +15,4 @@ source /data/apps/extern/spack_on/gcc/9.3.0/miniconda3/22.11.1-7f5s6r5uqyngliaca
 conda activate CompClass
 
 cd /home/en540-lludwig2/ProMDLM
-python train_custom.py
+python prepare.py

@@ -1,15 +1,15 @@
 # configs/train_config.yaml
 
 paths:
-  train_file: "/home/jtso3/ghassan/ProMDLM/data/lyzozyme_train.pkl"
-  val_file: "/home/jtso3/ghassan/ProMDLM/data/lyzozyme_val.pkl"
+  train_file: "/home/en540-lludwig2/ProMDLM/data/lyzozyme_train.pkl"
+  val_file: "/home/en540-lludwig2/ProMDLM/data/lyzozyme_val.pkl"
   pretrained_model_cfg: "configs/config_150m.yaml"
   pretrained_model_name: "facebook/esm2_t30_150M_UR50D"
-  output_dir: "/home/jtso3/ghassan/ProMDLM/training_results/big_fulldiff_training"
+  output_dir: "/home/en540-lludwig2/ProMDLM/training_results/L_scheme_1_full_lysozyme"
 
 training:
   device: "cuda:0"
-  learning_rate: 0.00001
+  learning_rate: 0.0001
   batch_size: 32
   epochs: 5
   max_timesteps: 500
