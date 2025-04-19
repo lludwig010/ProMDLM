@@ -1,0 +1,7 @@
+Maximum sequence length: 282
+Total number of data points: 178831
+Training set size: 160947
+Validation set size: 17884
+Tokenized train array shape: (160947, 282)
+Tokenized validation array shape: (17884, 282)
+Tokenized arrays saved to disk.

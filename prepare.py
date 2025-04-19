@@ -10,7 +10,7 @@ import pickle
 tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t30_150M_UR50D")
 
 # Read the dataset
-df_train = pd.read_csv('/home/jtso3/ghassan/ProMDLM/data/lysozyme_sequences.csv')
+df_train = pd.read_csv('/home/en540-lludwig2/ProMDLM/data/lysozyme_sequences.csv')
 
 # Find the maximum sequence length to use for padding
 max_length = df_train['Sequence'].str.len().max() + 2 # +2 for CLS and EOS tokens
@@ -30,8 +30,14 @@ def tokenize_sequence(sequence, max_len=None):
 n = len(df_train)
 print(f"Total number of data points: {n}")
 
+#shuffle train
+shuffled_df_train = df_train.sample(frac=1)
+
+shuffled_df_train.to_csv('data/shuffled_df_train.csv', index=False)
+
 train_data = df_train[:int(n*0.9)]
 val_data = df_train[int(n*0.9):]
+
 
 print(f"Training set size: {len(train_data)}")
 print(f"Validation set size: {len(val_data)}")
@@ -53,10 +59,10 @@ print(f"Tokenized train array shape: {tokenized_train_array.shape}")
 print(f"Tokenized validation array shape: {tokenized_val_array.shape}")
 
 # Save tokenized data
-with open('data/lyzozyme_train.pkl', 'wb') as f:
+with open('data/lyzozyme_train_shuffled.pkl', 'wb') as f:
     pickle.dump(tokenized_train_array, f)
 
-with open('data/lyzozyme_val.pkl', 'wb') as f:
+with open('data/lyzozyme_val_shuffled.pkl', 'wb') as f:
     pickle.dump(tokenized_val_array, f)
 
 print("Tokenized arrays saved to disk.")
