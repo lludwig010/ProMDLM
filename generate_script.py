@@ -2,33 +2,46 @@ from transformers import AutoTokenizer
 from omegaconf import OmegaConf
 from models import DiffusionProteinLanguageModel
 import torch
+import pandas as pd
+import os
 
 
-#cfg = OmegaConf.load("configs/config_150m.yaml")
-#model = DiffusionProteinLanguageModel.from_pretrained("facebook/esm2_t30_150M_UR50D", cfg_override=cfg, from_huggingface=False)
-model = torch.load("/home/jtso3/ghassan/ProMDLM/training_results/big_two_stage_training/big_two_stage_training_weights.pth", weights_only=False)
-device = torch.device("cuda:0")
-model = model.to(device)
-tokenizer =  AutoTokenizer.from_pretrained("facebook/esm2_t30_150M_UR50D")
+model_paths = ["training_results/second_attempt_big_increment_training/second_attempt_big_increment_training_weights.pth",
+              "training_results/second_attempt_big_two_stage_training/second_attempt_big_two_stage_training_weights.pth"]
+save_names = ["increment", "two_stage"]
+output_dir = "generated_sequences"
+os.makedirs(output_dir, exist_ok=True)
 
-generation_length = 282
-nb_generated_sequences = 4
+device = torch.device("cuda")
+max_iter=500
+generation_length = 150
+nb_generated_sequences = 100
 
+for model_path, save_name in zip(model_paths, save_names):
 
-input_string= "cls " + "L "* generation_length + "eos"
-input_id_one_seq = tokenizer.encode(input_string)
-input_ids = torch.tensor([input_id_one_seq] * nb_generated_sequences)
-input_ids = input_ids.to(device)
-batch = {
-    "input_ids": input_ids,
-}
-output = model.generate(batch, max_iter=100, temperature=1, resample_ratio=0.5, sampling_strategy = "vanilla")
-
-for i in range(nb_generated_sequences):
-    print("sequence", i)
-    decode = tokenizer.decode(output[0][i], skip_special_tokens=True)
-    print(decode.replace(" ",""))
+    dict_list = []
+    model = torch.load(model_path, weights_only=False)
+    model = model.to(device)
+    tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t30_150M_UR50D")
 
 
+    for temperature in [0.5,1,1.5]:
+        print(f"Generating sequences with temperature {temperature} for model {save_name}")
+        input_string= "cls " + "L "* generation_length + "eos"
+        input_id_one_seq = tokenizer.encode(input_string)
+        input_ids = torch.tensor([input_id_one_seq] * nb_generated_sequences)
+        input_ids = input_ids.to(device)
+        batch = {
+            "input_ids": input_ids,
+        }
+        output = model.generate(batch, max_iter=500, temperature=0.5, resample_ratio=0.2, sampling_strategy="vanilla")
+
+        for i in range(nb_generated_sequences):
+            decode = tokenizer.decode(output[0][i], skip_special_tokens=True)
+            decode = decode.replace(" ","")
+            dict_list.append({"model": save_name, "temperature": temperature, "sequence": decode})
+
+    df = pd.DataFrame(dict_list)
+    df.to_csv(f"{output_dir}/generated_sequences_{save_name}.csv", index=False)
 
 
