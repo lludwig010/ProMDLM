@@ -68,7 +68,6 @@ class Trainer:
 
                 # sample time step
                 t = torch.randint(0, self.max_timesteps, (1,)).item()
-                if i ==10: t=500
 
                 if i%10 ==0: self.logger.info(f"sampled timestep {t}")
 
@@ -86,8 +85,11 @@ class Trainer:
                     train_losses_batch.append(batch_loss.item())
                     train_total_loss += batch_loss.item()
 
+
                 except RuntimeError as e:
                     self.logger.warning(f"GRADIENTS EXPLODED FOR BATCH {i} TIMESTEP {t}, WE DO NOT UPDATE THE WEIGHTS.")
+                    percent_masked = torch.sum(batch_masks == 1).item() / batch_masks.numel()
+                    self.logger.warning(f"percent masked: {percent_masked}")
 
             
             avg_train_loss = train_total_loss / len(self.train_loader)
@@ -280,7 +282,6 @@ class Trainer:
                 max_timestep = min(self.max_timesteps, timestep + 0.1 * self.max_timesteps)
 
                 t = torch.randint(int(low_timestep), int(max_timestep), (1,)).item()
-                self.logger.info(f"sampled timestep {t}")
 
                 if i%10 ==0: self.logger.info(f"sampled timestep {t}")
 
@@ -397,8 +398,7 @@ def train_main():
 
     start = time.perf_counter()
 
-
-    config_path = "configs/training_fulldiff.yaml"
+    config_path = "configs/training_incremental.yaml"
     config = OmegaConf.load(config_path)
     os.makedirs(config.paths.output_dir, exist_ok=True)
     shutil.copy(config_path, os.path.join(config.paths.output_dir, "config_used.yaml")) #copy config file to output dir
@@ -442,7 +442,7 @@ def train_main():
     loss = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    train_dataset = CustomDataset(train_file_pkl, max_datapoints= 3000)
+    train_dataset = CustomDataset(train_file_pkl, max_datapoints= None)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
     val_dataset = CustomDataset(val_file_pkl, max_datapoints= 100)
