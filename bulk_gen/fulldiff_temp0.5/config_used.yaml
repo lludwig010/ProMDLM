@@ -1,0 +1,12 @@
+# configs/train_config.yaml
+
+paths:
+  output_dir: "/home/en540-lludwig2/ProMDLM/bulk_gen/fulldiff_temp0.5"
+  csv_save_name: "fulldiff_gen_t0.5.csv"
+
+model:
+  path_weights: 'training_results/L_scheme_1_full_lysozyme/L_scheme_1_full_lysozyme_weights.pth'
+  device: 'cuda'
+  length: 282
+  num_gen: 100
+  temp: 0.5

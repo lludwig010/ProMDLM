@@ -2,6 +2,7 @@ from transformers import EsmModel, EsmTokenizer
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+import pandas as pd
 
 
 def gen_perp_and_embed(csv, device):
@@ -46,7 +47,7 @@ def gen_perp_and_embed(csv, device):
     return perp_all_seq, embedding_all_seq
 
 
-def genTSNE(embed_default_gen, embed_gen, plot_name):
+def genTSNE(embed_default_gen, embed_gen, save_dir, plot_name):
     
     tsne = TSNE(n_components=2, random_state=42)
     transformed_vectors_default_gen = tsne.fit_transform(embed_default_gen)
@@ -59,23 +60,98 @@ def genTSNE(embed_default_gen, embed_gen, plot_name):
     plt.xlabel("t-SNE Component 1")
     plt.ylabel("t-SNE Component 2")
     plt.title(f"t-SNE Visualization {plot_name}")
-    plt.savefig(f"tSNE_plot_{plot_name}")
 
-def genDensityPerp(perplexity, name):
-    sns.kdeplot(data=perplexity, x=f'Perplexity_{name}', fill=True)
-    plt.title('Shaded Density Plot of Value')
-    plt.xlabel('Value')
-    plt.ylabel('Density')
-    plt.savefig(f"perp_density_plot_{name}")
+    plot_name = plot_name + '.png'
+
+    save_path = os.path.join(save_dir, plot_name)
+    plt.savefig(save_path)
+
+def genBoxPlot(perplexity_data, names, save_dir):
+    #perplexity_data is a list and so is name
+    plt.figure() 
+    plt.boxplot(perplexity_data, labels=names)
+    plt.title('Box and Whisker Plot')
+    plt.ylabel('Perplexity')
+
+    name = name + '.png'
+    save_path = os.path.join(save_dir, name)
+    plt.savefig(save_path)
+
+def main():
+    csv_fulldiff_gen = 'fulldif_gen.csv'
+    csv_twostepdiff_gen = 'twostepdiff_gen.csv'
+    csv_incrementdiff_gen = 'incrementdiff_gen.csv'
+    csv_progen_gen = 'progen_gen'
+    device = 'cuda'
+    save_dir = 'L_data_temp_1_test'
+
+    all_csv = [csv_fulldiff_gen, csv_twostepdiff_gen, csv_incrementdiff_gen, csv_progen_gen]
+    all_names = ['full_diff', 'two_step_diff', 'increment', 'progen']
+
+    #start with finding perplexity and embedding of the default
+    perplexity_default, embedding_default = gen_perp_and_embed('default csv', device) 
+
+    all_perplexity = [] 
+    all_embedding = []
+
+    for csv in all_csv:
+        perplexity, embedding = gen_perp_and_embed(csv,device)
+        all_perplexity.append(perplexity)
+        all_embedding.append(embedding)
+    
+    #generate T-SNE compared to the default
+    for num_e, embedding in enumerate(all_embedding):
+        genTSNE(embedding_default, embedding, save_dir, all_names[num_e])
+    
+    genBoxPlot(all_perplexity, all_names, save_dir)
+
+def get_evaluation_set():
+
+    df = pd.read_csv('/home/en540-lludwig2/ProMDLM/data/lysozyme_sequences.csv')
+
+    evaluation_data = df_train[int(n*0.9):]
+
+    df_shuffled_evaluation_data = df_train.sample(frac=1)
+
+    # Select the first 100 rows from the 'sequence' column
+    evaluation_seq = df_shuffled_evaluation_data[['Sequence']].head(100)  # double brackets to keep it a DataFrame
+
+    # Save to a new CSV
+    evaluation_seq.to_csv('random_100_sequences_test.csv', index=False)
+
+
+def test_main():
+    csv_fulldiff_gen = 'fulldif_gen.csv'
+    device = 'cuda'
+    save_dir = 'L_data_temp_1_test'
+
+    all_csv = [csv_fulldiff_gen, csv_twostepdiff_gen, csv_incrementdiff_gen, csv_progen_gen]
+    all_names = ['full_diff', 'two_step_diff', 'increment', 'progen']
+
+    #start with finding perplexity and embedding of the default
+    perplexity_default, embedding_default = gen_perp_and_embed('random_100_sequences_test.csv', device) 
+
+    all_perplexity = [] 
+    all_embedding = []
+
+    for csv in all_csv:
+        perplexity, embedding = gen_perp_and_embed(csv,device)
+        all_perplexity.append(perplexity)
+        all_embedding.append(embedding)
+    
+    #generate T-SNE compared to the default
+    for num_e, embedding in enumerate(all_embedding):
+        genTSNE(embedding_default, embedding, save_dir, all_names[num_e])
+    
+    genBoxPlot(all_perplexity, all_names, save_dir)
 
 if __name__ == "__main__":
-    gen_default_csv = 'default.csv'
-    gen_new_csv = 'gen.csv'
-    device = 'cude'
-    perp_default, embed_default = gen_perp_and_embed(gen_default_csv,device)
-    perp_new, embed_new = gen_perp_and_embed(gen_new_csv,device)
+
+
+
+
     
-    genTSNE()
+
 
 
 
