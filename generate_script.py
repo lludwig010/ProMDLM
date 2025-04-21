@@ -17,7 +17,7 @@ device = torch.device("cuda")
 
 #PARAMETERS
 max_iter= 500
-generation_length = 180
+generation_length = 150
 nb_generated_sequences = 10
 resample_ratio = 0.2
 
