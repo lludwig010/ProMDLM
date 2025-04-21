@@ -53,7 +53,7 @@ if __name__ == "__main__":
                  "/home/jtso3/ghassan/ProMDLM/generated_sequences/generated_sequences_two_stage.csv",
                  "/home/jtso3/ghassan/ProMDLM/generated_sequences/lysozyme_100_sequences_test.csv"]
 
-    db_name = "./blast/bin/lyzozyme_train_db"
+    db_name = "./blast/bin/original_train_set"
     for input in input_csv:
         run_blastp_analysis(input, db_name)
 
