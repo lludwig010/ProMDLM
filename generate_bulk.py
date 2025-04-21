@@ -32,7 +32,7 @@ input_ids = input_ids.to(device)
 batch = {
     "input_ids": input_ids,
 }
-output = model.generate(batch, max_iter=100, temperature=config.model.num_gen, resample_ratio=0.5, sampling_strategy = "vanilla")
+output = model.generate(batch, max_iter=100, temperature=conffig.model.temp, resample_ratio=0.5, sampling_strategy = "vanilla")
 
 for i in range(nb_generated_sequences):
     print("sequence", i)
