@@ -204,9 +204,9 @@ def genTSNECorrect(all_embeding, save_dir, plot_name, all_names):
             label=name
         )
 
-    plt.xlabel("t-SNE Component 1")
-    plt.ylabel("t-SNE Component 2")
-    plt.title(f"t-SNE Visualization {plot_name}")
+    plt.xlabel("tSNE_1")
+    plt.ylabel("tSNE_2")
+    plt.title(f"{plot_name}")
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, plot_name + ".png"))
@@ -230,9 +230,9 @@ def genTSNE(all_embeding, save_dir, plot_name, all_names):
         plt.scatter(transformed_vectors_default_gen[:, 0], transformed_vectors_default_gen[:, 1], alpha=0.7, label=f"{all_names[num]}")
         
 
-    plt.xlabel("t-SNE Component 1")
-    plt.ylabel("t-SNE Component 2")
-    plt.title(f"t-SNE Visualization {plot_name}")
+    plt.xlabel("t-SNE_1")
+    plt.ylabel("t-SNE_2")
+    plt.title(f"{plot_name}")
     plt.legend()
 
     plot_name = plot_name + '.png'
@@ -253,7 +253,7 @@ def genBoxPlot(perplexity_data, names, box_plot_name, save_dir):
 
 def main():
     device = 'cuda'
-    save_dir = 'L_evaluation_incrementDiff'
+    save_dir = 'L_evaluation_incrementDiff_NEW'
     os.makedirs(save_dir, exist_ok=True)
 
     tokenizer = EsmTokenizer.from_pretrained("facebook/esm2_t6_8M_UR50D")
@@ -263,7 +263,7 @@ def main():
     
     temp_use = 1.5
     
-    all_csv_tSNE = ['lysozyme_100_sequences_test.csv', '/home/en540-lludwig2/ProMDLM/generated_sequences/generated_sequences_increment.csv','/home/en540-lludwig2/ProMDLM/misc_ProteinData/claudins_sequences.csv','/home/en540-lludwig2/ProMDLM/misc_ProteinData/histones_sequences.csv','/home/en540-lludwig2/ProMDLM/misc_ProteinData/kinases_sequences.csv','/home/en540-lludwig2/ProMDLM/misc_ProteinData/ribosomes_sequences.csv']
+    all_csv_tSNE = ['/home/en540-lludwig2/ProMDLM/generated_sequences/lysozyme_100_test_set_final_results_full_t1.5_filtered.csv', '/home/en540-lludwig2/ProMDLM/generated_sequences/generated_sequences_increment_results_full_t1.5_filtered_results_esmfold.csv','/home/en540-lludwig2/ProMDLM/misc_ProteinData/claudins_sequences.csv','/home/en540-lludwig2/ProMDLM/misc_ProteinData/histones_sequences.csv','/home/en540-lludwig2/ProMDLM/misc_ProteinData/kinases_sequences.csv','/home/en540-lludwig2/ProMDLM/misc_ProteinData/ribosomes_sequences.csv']
     all_names_tSNE = ['lysozymes', 'incrementDiff', 'claudins', 'histones', 'kinases', 'ribosomes']
 
     all_csv_perp = ['']
@@ -282,7 +282,7 @@ def main():
         all_perplexity.append(pseudo_perpelexity)
     '''
 
-    name_plot = f'T_SNE_test_t{temp_use}'
+    name_plot = f'tSNE visualization of incrementDiff with temp {temp_use}'
     #genTSNE(all_embedding, save_dir, name_plot, all_names_tSNE)
     genTSNECorrect(all_embedding, save_dir, name_plot, all_names_tSNE)
     
@@ -329,7 +329,8 @@ def add_pseudo_perplexity_to_CSV(csv, device):
     df.to_csv(name + '_w_pseudo_perplexity.csv', index=False)
 
 if __name__ == "__main__":
-    #main()
+    main()
+    '''
     csv = '/home/en540-lludwig2/ProMDLM/generated_sequences/lysozyme_100_test_set_final.csv'
     device = 'cuda'
     add_pseudo_perplexity_to_CSV(csv, device)
@@ -339,7 +340,7 @@ if __name__ == "__main__":
     #model = EsmForMaskedLM.from_pretrained("facebook/esm2_t6_8M_UR50D")
     #model = model.to(device)
 
-    '''
+    
     seq_rand = 'VHMHWVEKKARPAEGEPKVFEEEVILPLKSIHPRFGDQDGTMCEESNAVIIEQFDFBLDICTPASRPACSGSFASVDYTWEIYPMRLRDAWFEMYTQFEFQCPNFGVIIEFARRDKASFYKQCDHWWPYYVWACNWEADCRESFSFTVCKVA'
     seq_true = 'ISSATVNLIKGSESLVPIPSPDPIGLLTVGYGHKCLKPQCSEVTFPFPLSSSTASQLFAQDMTQYINCLHRSISKSVVLNDNQFGALVSWTYNAGCEGMGTSTLVKRLNNGEDPNTVVAQELPKWNIAKKKISKGLVNRRNREISFFQTPSNVVAHPLC'
     perp = gen_pseudo_perp_seq(seq_rand, model, tokenizer)
@@ -350,6 +351,9 @@ if __name__ == "__main__":
     print('perp true')
     print(perp)
     '''
+    
+
+
 
 
     
