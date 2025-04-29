@@ -7,6 +7,9 @@ from torch.utils.data import DataLoader, Dataset
 import pickle
 
 class CustomDataset(Dataset):
+    '''
+    Dataset class to load in our tokenized data into batches for training
+    '''
     def __init__(self, dataset_file, max_datapoints = None):
 
         with open(dataset_file, 'rb') as f:

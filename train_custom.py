@@ -17,6 +17,9 @@ import time
 import shutil
 
 class Trainer:
+    '''
+    Class that sets up a specific training scheme from either full diffusion, two stage or incremental diffusion
+    '''
     def __init__(self, model, optimizer, loss_function, epochs, train_loader, val_loader, max_timesteps, batch_size, seq_len, vocab_size, device, output_dir, job_name="TEST", validation = False):
 
         self.model = model
@@ -35,9 +38,10 @@ class Trainer:
         self.validation = validation
         self.logger = logging.getLogger()
 
-
     def train_loop_fullDiff(self):
-        # Training scheme where amount diffuse increases with time
+        '''
+        Function for training scheme where amount diffufse is uniformly sampled during training
+        '''
         
         train_losses = []
         val_losses = [] 
@@ -53,16 +57,15 @@ class Trainer:
             val_total_loss = 0.0
             nb_batches_train = len(self.train_loader)
 
-            #load in the batches of sequences
+            # load in the batches of sequences
             self.model.train()
-            
             for i, batched_sequences_tokenized in enumerate(self.train_loader):
                 if i%10 ==0: self.logger.info(f"Training batch: {i}/{nb_batches_train}")
 
                 batch_size = batched_sequences_tokenized.shape
                 size_to_mask = batch_size[0]
 
-                #remove start and end tokens so that length is 286
+                # remove start and end tokens so that length is 286
                 batched_sequences_tokenized = batched_sequences_tokenized[:,:].to(self.device)  # remove eos?
                 self.optimizer.zero_grad()
 
@@ -85,7 +88,7 @@ class Trainer:
                     train_losses_batch.append(batch_loss.item())
                     train_total_loss += batch_loss.item()
 
-
+                # handle exploding gradient
                 except RuntimeError as e:
                     self.logger.warning(f"GRADIENTS EXPLODED FOR BATCH {i} TIMESTEP {t}, WE DO NOT UPDATE THE WEIGHTS.")
                     percent_masked = torch.sum(batch_masks == 1).item() / batch_masks.numel()
@@ -129,13 +132,15 @@ class Trainer:
 
         plot(self.job_name, train_losses_batch, val_losses_batch, train_losses, val_losses, self.output_dir)
 
-        #save the weights at the end of training
+        # save the weights at the end of training
         torch.save(self.model, self.output_dir + f'/{self.job_name}_weights.pth')
 
         return train_losses, self.model
     
     def train_loop_two_stage(self):
-            # Training scheme where amount diffuse increases with time
+        '''
+        Training scheme where first portion is fixed masked language model objective and the second portion is full diffusion
+        '''
             
             train_losses = []
             val_losses = [] 
@@ -239,7 +244,9 @@ class Trainer:
             return train_losses, self.model
 
     def train_increment_diffusion(self):
-        # Training scheme where amount diffuse increases with time
+        '''
+        Training scheme where amount diffuse increases with time
+        '''
         
         train_losses = []
         val_losses = [] 
@@ -249,9 +256,7 @@ class Trainer:
 
         self.logger.info("num train data points: %d", len(self.train_loader))
 
-        
         for epoch in range(self.epochs):
-
             self.logger.info(f"doing epoch: {epoch} out of {self.epochs}")
 
             self.model.train()
@@ -264,13 +269,10 @@ class Trainer:
             for i, batched_sequences_tokenized in enumerate(self.train_loader):
                 
                 if i%10 ==0: self.logger.info(f"Training batch {i}/{nb_batch_train}")
-
                 batch_size = batched_sequences_tokenized.shape
-
                 size_to_mask = batch_size[0]
 
-                #remove start and end tokens so that length is 286
-                batched_sequences_tokenized = batched_sequences_tokenized[:,:].to(self.device)  # remove eos?
+                batched_sequences_tokenized = batched_sequences_tokenized[:,:].to(self.device)  
                 self.optimizer.zero_grad()
 
                 # sample time step based off of the epoch training is on 
@@ -321,11 +323,9 @@ class Trainer:
                     batch_size = batched_sequences_tokenized.shape
                     size_to_mask = batch_size[0]
 
-                    #remove start and end tokens so that length is 286
-                    batched_sequences_tokenized = batched_sequences_tokenized[:,:].to(self.device)  # remove eos?
+                    batched_sequences_tokenized = batched_sequences_tokenized[:,:].to(self.device)  
 
                     # sample time step
-
                     timestep = (epoch/self.epochs) * self.max_timesteps
 
                     # define range for possible timesteps to sample between. upper and lower bound are 10% away from current timestep
@@ -334,7 +334,6 @@ class Trainer:
 
                     t = torch.randint(int(low_timestep), int(max_timestep), (1,)).item()
                     
-
                     batch_masks = noise_schedule(self.max_timesteps, t, size_to_mask, self.seq_len)
                     masked_batch_seq, batch_masks = apply_noise(batch_masks, batched_sequences_tokenized, t)
                     batch_pred_tokens = self.model(masked_batch_seq)
@@ -358,7 +357,9 @@ class Trainer:
 
 
 def plot(job_name, batch_train_losses, batch_val_losses, epoch_train_loses, epoch_val_losses, output_dir):
-    # function to plot the epoch and batch loss graphs, saved under output_dir with the job name
+    '''
+    function to plot the epoch and batch loss graphs, saved under output_dir with the job name
+    '''
 
         plt.figure()
         plt.plot(batch_train_losses)
@@ -404,7 +405,6 @@ def train_main():
     shutil.copy(config_path, os.path.join(config.paths.output_dir, "config_used.yaml")) #copy config file to output dir
 
 
-
     train_file_pkl = config.paths.train_file
     val_file_pkl = config.paths.val_file
 
@@ -416,24 +416,24 @@ def train_main():
     seq_len = config.training.seq_len
     vocab_size = config.training.vocab_size
     weight_decay = config.training.weight_decay
-    # added scheme to choose what kind of training
+
     training_scheme = config.training.scheme
     output_dir = config.paths.output_dir
     validation = config.training.validation
-    # no more need to specify both job name and output dir
+    
     job_name = os.path.basename(output_dir.rstrip('/'))
 
-    # Set up logging
+    # Set up logging 
     logging.basicConfig(
         filename=os.path.join(output_dir,f'{job_name}.log'),
-        filemode='w',  # 'a' for append, 'w' to overwrite each time
+        filemode='w', 
         format='%(asctime)s - %(levelname)s - %(message)s',
         level=logging.INFO
     )
     logger = logging.getLogger()
 
 
-
+    # load training configs
     cfg = OmegaConf.load(config.paths.pretrained_model_cfg)
     model = DiffusionProteinLanguageModel.from_pretrained(
         config.paths.pretrained_model_name, cfg_override=cfg
@@ -451,13 +451,15 @@ def train_main():
     logger.info(f"Number of training samples: {len(train_dataset)}")
     logger.info(f"Number of validation samples: {len(val_dataset)}")
 
+    # define the trainer class
     trainer = Trainer(
         model, optimizer, loss, num_epochs, train_loader, val_loader,
         max_timesteps, batch_size, seq_len, vocab_size, device, output_dir, job_name, validation
     )
 
-
     # default training scheme
+
+    # full diffusio 
     if training_scheme == 1:
         logger.info("Training scheme 1: full diffusion")
         train_losses, model = trainer.train_loop_fullDiff()
@@ -465,6 +467,8 @@ def train_main():
     elif training_scheme == 2:
         logger.info("Training scheme 2: incremental diffusion")
         train_losses, model = trainer.train_increment_diffusion()
+    
+    #two stage diffusion
     elif training_scheme == 3:
         logger.info("Training scheme 3: two stage training")
         train_losses, model = trainer.train_loop_two_stage()
