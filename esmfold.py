@@ -72,12 +72,11 @@ def calculate_esmfold_scores(input_csv):
     print(f"ESMFold analysis completed. Results saved to {os.path.join(output_dir, file_name_without_extension + '_results_esmfold.csv')}")
 
 if __name__ == "__main__":
-    input_csv = ["/home/jtso3/ghassan/ProMDLM/generated_sequences/lysozyme_100_test_set_final_results_full_t1_filtered.csv",
-    "/home/jtso3/ghassan/ProMDLM/generated_sequences/generated_sequences_progen_results_full_t1_filtered.csv",
-    "/home/jtso3/ghassan/ProMDLM/generated_sequences/generated_sequences_two_stage_results_full_t1_filtered.csv",
-    "/home/jtso3/ghassan/ProMDLM/generated_sequences/generated_sequences_increment_results_full_t1_filtered.csv",
-    "/home/jtso3/ghassan/ProMDLM/generated_sequences/generated_sequences_fulldiff_results_full_t1_filtered.csv"]
-    #input_csv = ["/home/jtso3/ghassan/ProMDLM/generated_sequences/example.csv"]
+    input_csv = ["generated_sequences/lysozyme_100_test_set_final_results_full_t1.5_filtered.csv",
+    "generated_sequences/generated_sequences_progen_results_full_t1.5_filtered.csv",
+    "generated_sequences/generated_sequences_two_stage_results_full_t1.5_filtered.csv",
+    "generated_sequences/generated_sequences_increment_results_full_t1.5_filtered.csv",
+    "generated_sequences/generated_sequences_fulldiff_results_full_t1.5_filtered.csv"]
 
     # Perform folding and get confidence scores
     for input in input_csv:

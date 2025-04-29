@@ -5,9 +5,7 @@ from utils import csv_to_fasta
 
 
 def calculate_sequence_entropy(input_csv):
-
   
-
     output_dir = os.path.dirname(input_csv)
     file_name_without_extension = os.path.splitext(os.path.basename(input_csv))[0]
 
@@ -28,12 +26,12 @@ def calculate_sequence_entropy(input_csv):
     print(f"BLASTP analysis completed. Results saved to {os.path.join(output_dir, file_name_without_extension+ "_results_entropy.csv")}")
 
 if __name__ == "__main__":
-    #input_csv = ["/home/jtso3/ghassan/ProMDLM/generated_sequences/generated_sequences_fulldiff.csv",
-    #             "/home/jtso3/ghassan/ProMDLM/generated_sequences/generated_sequences_increment.csv",
-    #             "/home/jtso3/ghassan/ProMDLM/generated_sequences/generated_sequences_progen.csv",
-    #             "/home/jtso3/ghassan/ProMDLM/generated_sequences/generated_sequences_two_stage.csv",
-    #             "/home/jtso3/ghassan/ProMDLM/generated_sequences/lysozyme_100_sequences_test.csv"]
-    input_csv = ["/home/jtso3/ghassan/ProMDLM/generated_sequences/lysozyme_100_test_set_final.csv"]
+    input_csv = ["generated_sequences/generated_sequences_fulldiff.csv",
+                 "enerated_sequences/generated_sequences_increment.csv",
+                 "generated_sequences/generated_sequences_progen.csv",
+                 "generated_sequences/generated_sequences_two_stage.csv",
+                 "generated_sequences/lysozyme_100_sequences_test.csv",
+                 ]
 
     for input in input_csv:
         calculate_sequence_entropy(input)

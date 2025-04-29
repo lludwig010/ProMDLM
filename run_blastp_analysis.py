@@ -47,11 +47,11 @@ def run_blastp_analysis(input_csv, db_name):
     print(f"BLASTP analysis completed. Results saved to {os.path.join(output_dir, input_csv)}")
 
 if __name__ == "__main__":
-    input_csv = ["/home/jtso3/ghassan/ProMDLM/generated_sequences/generated_sequences_fulldiff.csv",
-                 "/home/jtso3/ghassan/ProMDLM/generated_sequences/generated_sequences_increment.csv",
-                 "/home/jtso3/ghassan/ProMDLM/generated_sequences/generated_sequences_progen.csv",
-                 "/home/jtso3/ghassan/ProMDLM/generated_sequences/generated_sequences_two_stage.csv",
-                 "/home/jtso3/ghassan/ProMDLM/generated_sequences/lysozyme_100_sequences_test.csv"]
+    input_csv = ["generated_sequences/generated_sequences_fulldiff.csv",
+                 "generated_sequences/generated_sequences_increment.csv",
+                 "generated_sequences/generated_sequences_progen.csv",
+                 "generated_sequences/generated_sequences_two_stage.csv",
+                 "enerated_sequences/lysozyme_100_sequences_test.csv"]
 
     db_name = "./blast/bin/original_train_set"
     for input in input_csv:
