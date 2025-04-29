@@ -4,7 +4,7 @@ from transformers import AutoTokenizer
 import pickle
 
 # Open the .pkl file in binary read mode ('rb')
-with open('tokenized_train_array.pkl', 'rb') as file:
+with open("tokenized_train_array.pkl", "rb") as file:
     # Load the data from the .pkl file
     data = pickle.load(file)
 

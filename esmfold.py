@@ -7,6 +7,7 @@ import os
 import numpy as np
 import pandas as pd
 
+
 def convert_outputs_to_pdb(outputs):
     final_atom_positions = atom14_to_atom37(outputs["positions"][-1], outputs)
     outputs = {k: v.to("cpu").numpy() for k, v in outputs.items()}
@@ -29,6 +30,7 @@ def convert_outputs_to_pdb(outputs):
         pdbs.append(to_pdb(pred))
     return pdbs
 
+
 def get_plddt_from_pdb(pdb_string):
     lines = pdb_string.split("\n")
     plddt = []
@@ -37,6 +39,7 @@ def get_plddt_from_pdb(pdb_string):
             plddt_value = float(line[60:66].strip())
             plddt.append(plddt_value)
     return np.mean(np.array(plddt))
+
 
 def calculate_esmfold_scores(input_csv):
     df = pd.read_csv(input_csv)
@@ -55,36 +58,39 @@ def calculate_esmfold_scores(input_csv):
     for i, row in df.iterrows():
         sequence = row["sequence"]
         # Tokenize the sequence
-        tokenized_input = tokenizer([sequence], return_tensors="pt", add_special_tokens=False)['input_ids']
+        tokenized_input = tokenizer(
+            [sequence], return_tensors="pt", add_special_tokens=False
+        )["input_ids"]
         tokenized_input = tokenized_input.to(device)
 
         # Perform folding and get confidence scores
         with torch.no_grad():
             outputs = model(tokenized_input)
             print(outputs.keys())
-            ptm= outputs["ptm"]
+            ptm = outputs["ptm"]
             plddt = get_plddt_from_pdb(convert_outputs_to_pdb(outputs)[0])
             df.at[i, "plddt"] = float(plddt)
             df.at[i, "ptm"] = float(ptm.item())
 
+    df.to_csv(
+        os.path.join(output_dir, file_name_without_extension + "_results_esmfold.csv"),
+        index=False,
+    )
+    print(
+        f"ESMFold analysis completed. Results saved to {os.path.join(output_dir, file_name_without_extension + '_results_esmfold.csv')}"
+    )
 
-    df.to_csv(os.path.join(output_dir, file_name_without_extension + "_results_esmfold.csv"), index=False)
-    print(f"ESMFold analysis completed. Results saved to {os.path.join(output_dir, file_name_without_extension + '_results_esmfold.csv')}")
 
 if __name__ == "__main__":
-    input_csv = ["generated_sequences/lysozyme_100_test_set_final_results_full_t1.5_filtered.csv",
-    "generated_sequences/generated_sequences_progen_results_full_t1.5_filtered.csv",
-    "generated_sequences/generated_sequences_two_stage_results_full_t1.5_filtered.csv",
-    "generated_sequences/generated_sequences_increment_results_full_t1.5_filtered.csv",
-    "generated_sequences/generated_sequences_fulldiff_results_full_t1.5_filtered.csv"]
+    input_csv = [
+        "generated_sequences/lysozyme_100_test_set_final_results_full_t1.5_filtered.csv",
+        "generated_sequences/generated_sequences_progen_results_full_t1.5_filtered.csv",
+        "generated_sequences/generated_sequences_two_stage_results_full_t1.5_filtered.csv",
+        "generated_sequences/generated_sequences_increment_results_full_t1.5_filtered.csv",
+        "generated_sequences/generated_sequences_fulldiff_results_full_t1.5_filtered.csv",
+    ]
 
     # Perform folding and get confidence scores
     for input in input_csv:
         print("processing:", input)
         calculate_esmfold_scores(input)
-
-
-
-
-
-

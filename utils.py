@@ -1,7 +1,8 @@
 import os
 import pandas as pd
 
-def csv_to_fasta(csv_file, fasta_file, sequence_col, id_col= None):
+
+def csv_to_fasta(csv_file, fasta_file, sequence_col, id_col=None):
     """
     Transforms a CSV file with sequences into a FASTA file.
 
@@ -19,7 +20,7 @@ def csv_to_fasta(csv_file, fasta_file, sequence_col, id_col= None):
         df[id_col] = df.index
 
     # Open the FASTA file for writing
-    with open(fasta_file, 'w') as fasta:
+    with open(fasta_file, "w") as fasta:
         for _, row in df.iterrows():
             # Write the FASTA format
             fasta.write(f">{row[id_col]}\n{row[sequence_col]}\n")
