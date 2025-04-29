@@ -6,6 +6,10 @@ import torch
 from transformers import AutoTokenizer
 import pickle
 
+'''
+Script to preprocess sequence data into shuffled train and test set of tokenized ids 
+'''
+
 # Load the ESM2 tokenizer
 tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t30_150M_UR50D")
 
@@ -30,14 +34,13 @@ def tokenize_sequence(sequence, max_len=None):
 n = len(df_train)
 print(f"Total number of data points: {n}")
 
-#shuffle train
+# shuffle the train set
 shuffled_df_train = df_train.sample(frac=1)
 
 shuffled_df_train.to_csv('data/shuffled_df_train.csv', index=False)
 
 train_data = df_train[:int(n*0.9)]
 val_data = df_train[int(n*0.9):]
-
 
 print(f"Training set size: {len(train_data)}")
 print(f"Validation set size: {len(val_data)}")
@@ -64,5 +67,3 @@ with open('data/lyzozyme_train_shuffled.pkl', 'wb') as f:
 
 with open('data/lyzozyme_val_shuffled.pkl', 'wb') as f:
     pickle.dump(tokenized_val_array, f)
-
-print("Tokenized arrays saved to disk.")
