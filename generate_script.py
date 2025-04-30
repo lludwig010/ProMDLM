@@ -12,7 +12,7 @@ model_paths = [
     "/home/jtso3/ghassan/ProMDLM/training_results/fulldiff_weights.pth",
 ]
 save_names = ["increment", "two_stage", "fulldiff"]
-output_dir = "generated_sequences_215aa_long"
+output_dir = "generated_sequences_215aa_long
 os.makedirs(output_dir, exist_ok=True)
 
 device = torch.device("cuda")
