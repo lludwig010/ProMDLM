@@ -9,7 +9,7 @@
 
 ## Overview
 
-> This project encompasses our work in applying discrete space diffusion for protein language models to generate developable lysozymes. Building off of the original DPLM paper for the model architecture, we build 3 training schemes to train the model on the sequence diffusion task. The three schemes are Full Diffusion, Two Stage Diffusion and Incremental Diffusion. The first two training schemes are from our implementations of the training schemes detailed in DPLM. Incremental Diffusion is a training scheme we propose to fix some of the limitations in the other two. We find that the model trained on Incremental Diffusion improves its ability to generate outside of its training set while maintaining high foldability and low generative perplexity. 
+This project encompasses our work in applying discrete space diffusion for protein language models to generate developable lysozymes. Building off of the original DPLM paper for the model architecture, we build 3 training schemes to train the model on the sequence diffusion task. The three schemes are Full Diffusion, Two Stage Diffusion and Incremental Diffusion. The first two training schemes are from our implementations of the training schemes detailed in DPLM. Incremental Diffusion is a training scheme we propose to fix some of the limitations in the other two. We find that the model trained on Incremental Diffusion improves its ability to generate outside of its training set while maintaining high foldability and low generative perplexity. 
 
 ## Inference
 
