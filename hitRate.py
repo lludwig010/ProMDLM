@@ -15,15 +15,14 @@ def findHits(csv_list, name_list, temp, save_dir):
     all_hit_num = []
     for csv in csv_list:
         df = pd.read_csv(csv)
-        # if 'temperature' in df.columns:
+
         df = df[df["temperature"] == temp]
 
         print(len(df))
 
         print("len pident")
-        # print(len(df['pident'] <= ))
 
-        # hit_df = df.loc[(df['pident'] < 0.8)]
+
         hit_df = df[(df["pident"] <= 80) & (df["plddt"] >= 0.7)]
 
         print(len(hit_df))
